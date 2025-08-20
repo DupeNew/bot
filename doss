@@ -55,7 +55,7 @@ end
 local queueteleport = missing("function", queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport))
 if queueteleport then
     Players.LocalPlayer.OnTeleport:Connect(function(State)
-        pcall(queueteleport, loadstring(game:HttpGet("https://raw.githubusercontent.com/DupeNew/bot/refs/heads/main/dos"))())
+        pcall(queueteleport, loadstring(game:HttpGet("https://raw.githubusercontent.com/DupeNew/bot/refs/heads/main/doss"))())
     end)
 end
 ]]) .. [[)
