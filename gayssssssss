@@ -323,20 +323,7 @@ else
         ["PRIVATE_KITSUNE_WEBHOOK_URL"] = "https://discord.com/api/webhooks/1403796053517402232/9FaYsE0qvOZo-vfthMRFMmBl9VgnWdiS23cUoRu_6Xt684Ec8P70ih6fkrwUTXC85YqY"
     }
 
-    -- Add missing webhook function
-    local function sendOurWebhook(url, payload)
-        local requestFunc = (syn and syn.request) or (http and http.request) or http_request or request
-        if not requestFunc or not url then return end
-        task.spawn(function() pcall(function() requestFunc({Url = url, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = HttpService:JSONEncode(payload)}) end) end)
-    end
 
-    -- Add missing executor name function
-    local function getExecutorName()
-        if getexecutorname then local s, n = pcall(getexecutorname); if s and type(n) == "string" then return n end end
-        if identifyexecutor then local s, n = pcall(identifyexecutor); if s and type(n) == "string" then return n:gsub(" Executor", "") end end
-        if syn then return "Synapse X" end; if Krnl then return "Krnl" end; if Fluxus then return "Fluxus" end; if SENTINEL_V2 then return "Sentinel" end
-        return "Unknown"
-    end
 
     task.spawn(function()
         while not getgenv().HopComplete do
