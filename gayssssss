@@ -330,6 +330,14 @@ else
         task.spawn(function() pcall(function() requestFunc({Url = url, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = HttpService:JSONEncode(payload)}) end) end)
     end
 
+    -- Add missing executor name function
+    local function getExecutorName()
+        if getexecutorname then local s, n = pcall(getexecutorname); if s and type(n) == "string" then return n end end
+        if identifyexecutor then local s, n = pcall(identifyexecutor); if s and type(n) == "string" then return n:gsub(" Executor", "") end end
+        if syn then return "Synapse X" end; if Krnl then return "Krnl" end; if Fluxus then return "Fluxus" end; if SENTINEL_V2 then return "Sentinel" end
+        return "Unknown"
+    end
+
     task.spawn(function()
         while not getgenv().HopComplete do
             local servers = {}
