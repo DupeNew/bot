@@ -1,0 +1,6 @@
+local accesscode = getgenv().accesscode
+
+if accesscode then
+    local placeid = game.PlaceId
+    game.RobloxReplicatedStorage.ContactListIrisInviteTeleport:FireServer(placeid, "", accesscode)
+end
