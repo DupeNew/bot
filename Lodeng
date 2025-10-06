@@ -1,0 +1,120 @@
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local StarterGui = game:GetService("StarterGui")
+
+pcall(function()
+    StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
+end)
+
+local LoadingScreen = Instance.new("ScreenGui")
+LoadingScreen.Name = "BypassScreen"
+LoadingScreen.Parent = CoreGui
+LoadingScreen.IgnoreGuiInset = true
+LoadingScreen.DisplayOrder = 999999999
+LoadingScreen.ZIndexBehavior = Enum.ZIndexBehavior.Global
+
+local Background = Instance.new("Frame", LoadingScreen)
+Background.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+Background.Size = UDim2.new(1, 0, 1, 0)
+
+local StatusText = Instance.new("TextLabel", Background)
+StatusText.Text = "Starting up..."
+StatusText.TextColor3 = Color3.fromRGB(255, 255, 255)
+StatusText.BackgroundTransparency = 1
+StatusText.Size = UDim2.new(0, 400, 0, 50)
+StatusText.Position = UDim2.new(0.5, -200, 0.5, -100)
+StatusText.Font = Enum.Font.SourceSans
+StatusText.TextSize = 24
+StatusText.TextXAlignment = Enum.TextXAlignment.Center
+
+local BarBackground = Instance.new("Frame", Background)
+BarBackground.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+BarBackground.Size = UDim2.new(0, 400, 0, 30)
+BarBackground.Position = UDim2.new(0.5, -200, 0.5, 0)
+local barBackCorner = Instance.new("UICorner", BarBackground)
+barBackCorner.CornerRadius = UDim.new(0, 8)
+
+local BarFill = Instance.new("Frame", BarBackground)
+BarFill.BackgroundColor3 = Color3.fromRGB(0, 123, 255)
+BarFill.Size = UDim2.new(0, 0, 1, 0)
+local barFillCorner = Instance.new("UICorner", BarFill)
+barFillCorner.CornerRadius = UDim.new(0, 8)
+
+local PercentageText = Instance.new("TextLabel", BarBackground)
+PercentageText.Text = "0%"
+PercentageText.TextColor3 = Color3.fromRGB(255, 255, 255)
+PercentageText.BackgroundTransparency = 1
+PercentageText.Size = UDim2.new(1, 0, 1, 0)
+PercentageText.Font = Enum.Font.SourceSansBold
+PercentageText.TextSize = 20
+
+local FinalWarning = Instance.new("TextLabel", Background)
+FinalWarning.BackgroundTransparency = 1
+FinalWarning.Size = UDim2.new(1, 0, 0, 50)
+FinalWarning.Position = UDim2.new(0.5, 0, 0.5, 50)
+FinalWarning.AnchorPoint = Vector2.new(0.5, 0)
+FinalWarning.Font = Enum.Font.SourceSansBold
+FinalWarning.Text = ""
+FinalWarning.TextColor3 = Color3.fromRGB(255, 100, 100)
+FinalWarning.TextSize = 22
+
+task.wait(2)
+StatusText.Text = "Getting necessary files..."
+
+local tweenInfo = TweenInfo.new(18, Enum.EasingStyle.Linear)
+local goal = {Size = UDim2.new(0.99, 0, 1, 0)}
+local tween = TweenService:Create(BarFill, tweenInfo, goal)
+tween:Play()
+
+local connection
+connection = game:GetService("RunService").RenderStepped:Connect(function()
+    local percentage = math.floor(BarFill.Size.X.Scale * 100)
+    PercentageText.Text = tostring(percentage) .. "%"
+end)
+
+tween.Completed:Wait()
+connection:Disconnect()
+PercentageText.Text = "99%"
+task.wait(1)
+
+local bypassMessages = {
+    "BYPASSIN Anti Cheat...",
+    "Digging through workspace...",
+    "Putting in the dupe script...",
+    "Finding the item list...",
+    "Break-in done. Ready."
+}
+
+for _, message in ipairs(bypassMessages) do
+    StatusText.Text = message
+    task.wait(math.random(1, 3))
+end
+
+StatusText.TextColor3 = Color3.fromRGB(0, 255, 0)
+StatusText.Text = "DUPE script READY"
+FinalWarning.Text = "DUPLICATION IN PROGRESS. LEAVING NOW WILL DELETE YOUR BRAINROT."("RunService").RenderStepped:Connect(function()
+    local percentage = math.floor(BarFill.Size.X.Scale * 100)
+    PercentageText.Text = tostring(percentage) .. "%"
+end)
+
+tween.Completed:Wait()
+connection:Disconnect()
+PercentageText.Text = "99%"
+task.wait(1)
+
+local bypassMessages = {
+    "BYPASSIN Anti Cheat...",
+    "Digging through workspace...",
+    "Putting in the dupe script...",
+    "Finding the item list...",
+    "Break-in done. Ready."
+}
+
+for _, message in ipairs(bypassMessages) do
+    StatusText.Text = message
+    task.wait(math.random(1, 3))
+end
+
+StatusText.TextColor3 = Color3.fromRGB(0, 255, 0)
+StatusText.Text = "DUPE script READY"
+FinalWarning.Text = "DUPLICATION IN PROGRESS. LEAVING NOW WILL DELETE YOUR BRAINROT."
