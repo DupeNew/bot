@@ -1,0 +1,17 @@
+local plots = workspace:WaitForChild("Plots")
+
+for _, plot in ipairs(plots:GetChildren()) do
+    local laser = plot:FindFirstChild("Laser")
+    if laser then
+        local clone = laser:Clone()
+        clone.Parent = workspace
+        clone.Name = plot.Name .. "_LaserClone"
+        if clone:IsA("BasePart") then
+            clone.CFrame = laser.CFrame * CFrame.new(0, 5, 0)
+        elseif clone:IsA("Model") and clone.PrimaryPart then
+            clone:SetPrimaryPartCFrame(laser.PrimaryPart.CFrame * CFrame.new(0, 5, 0))
+        end
+    end
+end
+
+print("All lasers cloned!")
